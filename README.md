@@ -12,3 +12,12 @@ If you use any of the tools in your work, we would love to hear about it and wou
 
 - Sam Skalicky, Joshua Monson, Andrew Schmidt, and Matthew French: Hot & Spicy: Improving Productivity with Python and HLS for FPGAs, 26th IEEE International Symposium on Field-Programmable Custom Computing Machines (FCCM 2018), April 2018.
 
+```
+@inproceedings{Skalicky:2018:FCCM:Spicy,
+title={Hot \& Spicy: Improving Productivity with Python and HLS for FPGAs},
+author={Skalicky, Sam and Monson, Joshua and Schmidt, Andrew and French, Matthew},
+booktitle={International Symposium on Field-Programmable Custom Computing Machines},
+month={Apr},
+year={2018},
+}
+```
