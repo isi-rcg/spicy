@@ -2,9 +2,9 @@
 Python tools for FPGAs
 
 # Licensing
-Currently this project is licensed GPL v3.0. Feel free to use the code as you wish, please cite us, and make sure to share your derivative works.
+Currently this project is licensed using a custom MIT-like license, see 'license.txt' for specifics. We are working towards a GPL release in the future. 
 
-If you'd like another license, please contact us.
+If you'd like another license, please contact us at: skalicky@isi.edu. 
 
 # Publication
 
