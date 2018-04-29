@@ -1,0 +1,5 @@
+#!/bin/bash
+#get directory that this script lives at
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+FILE="$DIR/src/pyxis.py"
+python3.6 $FILE $@

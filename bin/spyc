@@ -1,0 +1,7 @@
+#Loader script to execute the python translater, sPyC
+
+#!/bin/bash
+#get directory that this script lives at
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+FILE="$DIR/src/spyc.py"
+python3.6 $FILE $@
