@@ -1,0 +1,87 @@
+The Software is made available for academic or non-commercial purposes only. 
+The license is for a copy of the program for an unlimited term. Individuals 
+requesting a license for commercial use must pay for a commercial license. 
+
+USC Stevens Institute for Innovation
+University of Southern California
+1150 S. Olive Street, Suite 2300
+Los Angeles, CA 90115, USA
+ATTN: Accounting
+
+DISCLAIMER. USC MAKES NO EXPRESS OR IMPLIED WARRANTIES, EITHER IN FACT OR 
+BY OPERATION OF LAW, BY STATUTE OR OTHERWISE, AND USC SPECIFICALLY AND 
+EXPRESSLY DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY OF MERCHANTABILITY OR 
+FITNESS FOR A PARTICULAR PURPOSE, VALIDITY OF THE SOFTWARE OR ANY OTHER 
+INTELLECTUAL PROPERTY RIGHTS OR NON-INFRINGEMENT OF THE INTELLECTUAL 
+PROPERTY OR OTHER RIGHTS OF ANY THIRD PARTY. SOFTWARE IS MADE AVAILABLE 
+AS-IS. LIMITATION OF LIABILITY.  TO THE MAXIMUM EXTENT PERMITTED BY LAW, 
+IN NO EVENT WILL USC BE LIABLE TO ANY USER OF THIS CODE FOR ANY INCIDENTAL, 
+CONSEQUENTIAL, EXEMPLARY OR PUNITIVE DAMAGES OF ANY KIND, LOST GOODWILL, 
+LOST PROFITS, LOST BUSINESS AND/OR ANY INDIRECT ECONOMIC DAMAGES WHATSOEVER, 
+REGARDLESS OF WHETHER SUCH DAMAGES ARISE FROM CLAIMS BASED UPON CONTRACT, 
+NEGLIGENCE, TORT (INCLUDING STRICT LIABILITY OR OTHER LEGAL THEORY), A 
+BREACH OF ANY WARRANTY OR TERM OF THIS AGREEMENT, AND REGARDLESS OF 
+WHETHER USC WAS ADVISED OR HAD REASON TO KNOW OF THE POSSIBILITY OF 
+INCURRING SUCH DAMAGES IN ADVANCE.
+
+For commercial license pricing and annual commercial update and support pricing, please contact:
+Rakesh Pandit
+USC Stevens Institute for Innovation
+University of Southern California
+1150 S. Olive Street, Suite 2300
+Los Angeles, CA 90115, USA
+Tel: +1 213-821-3552
+Fax: +1 213-821-5001
+Email: rakeshvp@usc.edu and CC to: accounting@stevens.usc.edu
+
+
+
+Original Version
+Author: Sam Skalicky, skalicky@isi.edu
+Institution: Information Sciences Institute, University of Southern California
+
+
+
+Hot & Spicy installation tutorial
+
+This tutorial assumes a fresh clean Ubuntu 16.04 installation. It is possible that some of the steps might help set up on other OSes, but that is not the goal of the tutorial. 
+
+-----------------------------------------
+Initial Ubuntu configuration
+-----------------------------------------
+Git:
+sudo apt install git
+
+Python3.6:
+sudo apt-get install software-properties-common python-software-properties
+sudo add-apt-repository ppa:jonathonf/python-3.6
+sudo apt-get update
+sudo apt-get install python3.6
+sudo apt-get install python3.6-dev
+
+pip3.6:
+wget https://bootstrap.pypa.io/get-pip.py
+sudo python3.6 get-pip.py
+
+numpy:
+sudo pip3.6 install numpy
+
+SDSoC pre-requisites for Ubuntu:
+sudo apt-get install libc6-dev-i386
+sudo ln -s /usr/lib/x86_64-linux-gnu /usr/lib64
+
+SDSoC 2017.2:
+Download 2017.2 SDSoC web installer for Linux 64 (85.29 MB)
+./Xilinx_SDSoC_2017.2_sdx_0823_1_Lin64.bin
+
+-----------------------------------------
+Hot & Spicy configuration
+-----------------------------------------
+1.	Check out the repo: git clone ssh://git@rcg.isi.edu/scx2.git
+2.	cd scx2/spyc
+3.	source settings.sh
+4.	cd tests
+5.	make all
+6.	source settings64.sh from SDSoC installation directory
+7.	cd examples
+8.	run though python2c, wrap, and mmult examples
