@@ -31,6 +31,11 @@ year={2018},
 
 A copy of the paper and presentation slides are available here: https://samskalicky.wordpress.com/2018/04/30/paper-accepted-python-hls-sdsoc/
 
-# EDA Tools
+# EDA Tools & Platforms
 
 Hot & Spicy currently targets SDSoC 2017.4. In the paper, the results were produced using SDSoC 2017.2. There are quite a few improvements and differences between 2017.2 and 2017.4 but are not backwards compatible.
+
+Hot & Spicy is built on top of the PYNQ platform version 2.1. Here are the default platforms available:
+
+1. pynq_bare - this platform is an empty platform without any I/O
+2. pynq_hdmi - this platform only includes the PYNQ HDMI in/out path
