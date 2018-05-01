@@ -1,5 +1,4 @@
-# Hot & Spicy
-Python tools for FPGAs
+# Hot & Spicy Python tools for FPGAs
 
 Hot & Spicy is an open-source infrastructure and tool suite for integrating FPGA accelerators in Python applications, provided entirely as Python source code. This suite of tools eases the packaging, integration, and binding of accelerators and their C/C++ based drivers callable from a Python application. The Hot & Spicy tools can: 
 1. translate Python functions to HLS-suitable C functions, 
