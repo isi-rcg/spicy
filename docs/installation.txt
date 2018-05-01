@@ -70,14 +70,14 @@ SDSoC pre-requisites for Ubuntu:
 sudo apt-get install libc6-dev-i386
 sudo ln -s /usr/lib/x86_64-linux-gnu /usr/lib64
 
-SDSoC 2017.2:
-Download 2017.2 SDSoC web installer for Linux 64 (85.29 MB)
-./Xilinx_SDSoC_2017.2_sdx_0823_1_Lin64.bin
+SDSoC 2017.4:
+Download 2017.4 SDSoC web installer for Linux 64 (85.29 MB)
+
 
 -----------------------------------------
 Hot & Spicy configuration
 -----------------------------------------
-1.	Check out the repo: git clone ssh://git@rcg.isi.edu/scx2.git
+1.	Check out the repo: git clone https://github.com/ISI-RCG/spicy.git
 2.	cd scx2/spyc
 3.	source settings.sh
 4.	cd tests
