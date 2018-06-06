@@ -1,0 +1,79 @@
+INFO: [HLS 200-10] Running '/export/tools/xilinx/Vivado/2017.4/bin/unwrapped/lnx64.o/vivado_hls'
+INFO: [HLS 200-10] For user 'skalicky' on host 'itag4' (Linux_x86_64 version 4.4.0-112-generic) on Tue Apr 17 10:00:20 EDT 2018
+INFO: [HLS 200-10] On os Ubuntu 16.04.3 LTS
+INFO: [HLS 200-10] In directory '/import/home/skalicky/Projects/scx2/spyc/platforms/src_pynq/ip/hls'
+INFO: [HLS 200-10] Creating and opening project '/import/home/skalicky/Projects/scx2/spyc/platforms/src_pynq/ip/hls/trace_cntrl_64'.
+INFO: [HLS 200-10] Adding design file 'trace_cntrl_64/trace_cntrl_64.cpp' to the project
+INFO: [HLS 200-10] Creating and opening solution '/import/home/skalicky/Projects/scx2/spyc/platforms/src_pynq/ip/hls/trace_cntrl_64/solution1'.
+INFO: [HLS 200-10] Setting target device to 'xc7z020clg484-1'
+INFO: [SYN 201-201] Setting up clock 'default' with a period of 10ns.
+INFO: [HLS 200-10] Analyzing design file 'trace_cntrl_64/trace_cntrl_64.cpp' ...
+INFO: [HLS 200-10] Validating synthesis directives ...
+INFO: [HLS 200-111] Finished Checking Pragmas Time (s): cpu = 00:00:34 ; elapsed = 00:00:16 . Memory (MB): peak = 352.105 ; gain = 13.578 ; free physical = 11072 ; free virtual = 239616
+INFO: [HLS 200-111] Finished Linking Time (s): cpu = 00:00:36 ; elapsed = 00:00:18 . Memory (MB): peak = 352.105 ; gain = 13.578 ; free physical = 11072 ; free virtual = 239618
+INFO: [HLS 200-10] Starting code transformations ...
+INFO: [HLS 200-111] Finished Standard Transforms Time (s): cpu = 00:00:37 ; elapsed = 00:00:19 . Memory (MB): peak = 352.332 ; gain = 13.805 ; free physical = 11059 ; free virtual = 239606
+INFO: [HLS 200-10] Checking synthesizability ...
+INFO: [HLS 200-111] Finished Checking Synthesizability Time (s): cpu = 00:00:38 ; elapsed = 00:00:19 . Memory (MB): peak = 352.332 ; gain = 13.805 ; free physical = 11055 ; free virtual = 239603
+WARNING: [XFORM 203-1103] Ignored data pack directive on non-struct variable 'capture_64.data.V' (trace_cntrl_64/trace_cntrl_64.cpp:7).
+WARNING: [XFORM 203-1103] Ignored data pack directive on non-struct variable 'trace_64.data.V' (trace_cntrl_64/trace_cntrl_64.cpp:6).
+INFO: [XFORM 203-401] Performing if-conversion on hyperblock from (trace_cntrl_64/trace_cntrl_64.cpp:20:32) to (trace_cntrl_64/trace_cntrl_64.cpp:26:3) in function 'trace_cntrl_64'... converting 3 basic blocks.
+INFO: [HLS 200-111] Finished Pre-synthesis Time (s): cpu = 00:00:38 ; elapsed = 00:00:20 . Memory (MB): peak = 480.105 ; gain = 141.578 ; free physical = 11030 ; free virtual = 239581
+INFO: [HLS 200-111] Finished Architecture Synthesis Time (s): cpu = 00:00:39 ; elapsed = 00:00:21 . Memory (MB): peak = 480.105 ; gain = 141.578 ; free physical = 11029 ; free virtual = 239579
+INFO: [HLS 200-10] Starting hardware synthesis ...
+INFO: [HLS 200-10] Synthesizing 'trace_cntrl_64' ...
+WARNING: [SYN 201-107] Renaming port name 'trace_cntrl_64/length' to 'trace_cntrl_64/length_r' to avoid the conflict with HDL keywords or other object names.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-42] -- Implementing module 'trace_cntrl_64'
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [SCHED 204-11] Starting scheduling ...
+INFO: [SCHED 204-61] Pipelining loop 'Loop 1'.
+INFO: [SCHED 204-61] Pipelining result : Target II = 1, Final II = 1, Depth = 4.
+INFO: [SCHED 204-11] Finished scheduling.
+INFO: [HLS 200-111]  Elapsed time: 20.82 seconds; current allocated memory: 73.082 MB.
+INFO: [BIND 205-100] Starting micro-architecture generation ...
+INFO: [BIND 205-101] Performing variable lifetime analysis.
+INFO: [BIND 205-101] Exploring resource sharing.
+INFO: [BIND 205-101] Binding ...
+INFO: [BIND 205-100] Finished micro-architecture generation.
+INFO: [HLS 200-111]  Elapsed time: 0.09 seconds; current allocated memory: 73.368 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-10] -- Generating RTL for module 'trace_cntrl_64'
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/trace_64_data_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/trace_64_keep_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/trace_64_strb_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/trace_64_user_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/trace_64_last_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/trace_64_id_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/trace_64_dest_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/capture_64_data_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/capture_64_keep_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/capture_64_strb_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/capture_64_user_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/capture_64_last_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/capture_64_id_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/capture_64_dest_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/trigger_V' to 's_axilite & ap_none'.
+INFO: [RTGEN 206-500] Setting interface mode on port 'trace_cntrl_64/length_r' to 's_axilite & ap_none'.
+INFO: [RTGEN 206-500] Setting interface mode on function 'trace_cntrl_64' to 's_axilite & ap_ctrl_hs'.
+INFO: [RTGEN 206-100] Bundling port 'return', 'trigger_V' and 'length_r' to AXI-Lite port trace_cntrl.
+INFO: [RTGEN 206-100] Finished creating RTL model for 'trace_cntrl_64'.
+INFO: [HLS 200-111]  Elapsed time: 0.19 seconds; current allocated memory: 74.942 MB.
+INFO: [HLS 200-111] Finished generating all RTL models Time (s): cpu = 00:00:40 ; elapsed = 00:00:25 . Memory (MB): peak = 480.105 ; gain = 141.578 ; free physical = 11028 ; free virtual = 239580
+INFO: [SYSC 207-301] Generating SystemC RTL for trace_cntrl_64.
+INFO: [VHDL 208-304] Generating VHDL RTL for trace_cntrl_64.
+INFO: [VLOG 209-307] Generating Verilog RTL for trace_cntrl_64.
+INFO: [IMPL 213-8] Exporting RTL as a Vivado IP.
+
+****** Vivado v2017.4 (64-bit)
+  **** SW Build 2086221 on Fri Dec 15 20:54:30 MST 2017
+  **** IP Build 2085800 on Fri Dec 15 22:25:07 MST 2017
+    ** Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
+
+source run_ippack.tcl -notrace
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1704] No user IP repositories specified
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/export/tools/xilinx/Vivado/2017.4/data/ip'.
+INFO: [Common 17-206] Exiting Vivado at Tue Apr 17 10:01:04 2018...
+INFO: [HLS 200-112] Total elapsed time: 75.68 seconds; peak allocated memory: 74.942 MB.

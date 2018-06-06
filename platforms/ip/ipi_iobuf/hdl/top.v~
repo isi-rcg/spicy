@@ -1,0 +1,16 @@
+`timescale 1ns / 1ps
+
+module top(
+    input IN,
+    output OUT,
+    input TRI,
+    inout INOUT
+);
+
+   IOBUF iobuf_i (
+    .I(IN),
+    .IO(INOUT),
+    .O(OUT),
+    .T(TRI)
+    );
+endmodule 
