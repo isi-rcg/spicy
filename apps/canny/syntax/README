@@ -1,0 +1,75 @@
+The Software is made available for academic or non-commercial purposes only. 
+The license is for a copy of the program for an unlimited term. Individuals 
+requesting a license for commercial use must pay for a commercial license. 
+
+USC Stevens Institute for Innovation
+University of Southern California
+1150 S. Olive Street, Suite 2300
+Los Angeles, CA 90115, USA
+ATTN: Accounting
+
+DISCLAIMER. USC MAKES NO EXPRESS OR IMPLIED WARRANTIES, EITHER IN FACT OR 
+BY OPERATION OF LAW, BY STATUTE OR OTHERWISE, AND USC SPECIFICALLY AND 
+EXPRESSLY DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY OF MERCHANTABILITY OR 
+FITNESS FOR A PARTICULAR PURPOSE, VALIDITY OF THE SOFTWARE OR ANY OTHER 
+INTELLECTUAL PROPERTY RIGHTS OR NON-INFRINGEMENT OF THE INTELLECTUAL 
+PROPERTY OR OTHER RIGHTS OF ANY THIRD PARTY. SOFTWARE IS MADE AVAILABLE 
+AS-IS. LIMITATION OF LIABILITY.  TO THE MAXIMUM EXTENT PERMITTED BY LAW, 
+IN NO EVENT WILL USC BE LIABLE TO ANY USER OF THIS CODE FOR ANY INCIDENTAL, 
+CONSEQUENTIAL, EXEMPLARY OR PUNITIVE DAMAGES OF ANY KIND, LOST GOODWILL, 
+LOST PROFITS, LOST BUSINESS AND/OR ANY INDIRECT ECONOMIC DAMAGES WHATSOEVER, 
+REGARDLESS OF WHETHER SUCH DAMAGES ARISE FROM CLAIMS BASED UPON CONTRACT, 
+NEGLIGENCE, TORT (INCLUDING STRICT LIABILITY OR OTHER LEGAL THEORY), A 
+BREACH OF ANY WARRANTY OR TERM OF THIS AGREEMENT, AND REGARDLESS OF 
+WHETHER USC WAS ADVISED OR HAD REASON TO KNOW OF THE POSSIBILITY OF 
+INCURRING SUCH DAMAGES IN ADVANCE.
+
+For commercial license pricing and annual commercial update and support pricing, please contact:
+Rakesh Pandit
+USC Stevens Institute for Innovation
+University of Southern California
+1150 S. Olive Street, Suite 2300
+Los Angeles, CA 90115, USA
+Tel: +1 213-821-3552
+Fax: +1 213-821-5001
+Email: rakeshvp@usc.edu and CC to: accounting@stevens.usc.edu
+
+
+
+Original Version
+Author: Sam Skalicky, skalicky@isi.edu
+Institution: Information Sciences Institute, University of Southern California
+
+
+
+This is the original version of the algorithm largely unmodified but syntax modified to be suitable for translating from Python to C using sPyC.
+
+Here are a list of the modifications:
+
+Removed entire dependency of the Canny algorithm on the scipy package
+
+1. added custom gaussian_filter function to replace the scipy.ndimage.filters.gaussian_filter dependency. It uses the same 5x5 sliding window and weights. The weights are float32 type, but the input and output image is uint8. 
+
+2. added custom convolve function to replace the scipy.filters.convole dependency. It uses the same 3x3 sliding window. The function is called twice in the Canny algorithm to compute the Sobel gradients in the x and y directions. Since the sobel weights are positive and negative integers, the kernel weights are int16 type. The input image is uint8 type, but the output image is int16 since some convolved pixel values can be negative. 
+
+3. syntax modifications to adhere to the supported sPyC syntax. Examples include:
+   A. declaring arrays as numpy.ndarray() rather than assign from the output of expressions. 
+   B. removed operations on numpy arrays themselves with for loops to iterate through the elements of the arrays and compute the same expression on an element-by-element basis
+   C. separated the thetaQ calculation into two parts since mod operator '%' in C does not work on float types
+   D. changed the gradSup assignment to grad.copy() by moving the assignment into a doubly nested for loop that assigns each values as it iterates rather than copying the whole array outright in the beginning.
+   E. replace 2D array indexing using tuples (ie. 'a[r,c]') to using two sets of square brackets (ie. 'a[r][c]')
+   F. moved the computations for strongEdges and thresholdedEdges into the prior doubly nested for loop to calculate on an element-wise basis
+   G. split currentPixels list containing tuple elements into two lists (currentPixels_r and currentPixels_c) containing single elements
+   H. replaced 3x3 patch max finding operation with a doubly nested for loop that finds the max
+   I. assigned finalEdges values as 0 or 255 rather than 0 or 1
+
+4. Specified non-float types where possible to optimize for required precision. Examples include:
+   A. Input image is not converted to float immediately (operated on as uint8)
+   B. gaussian_filter weights are float, but output image is uint8
+   C. convolve weights are int16 and output image is int16
+   D. grad array is uint16 rather than float
+   E. theta array is kept as float since values range from -pi to pi
+   F. thetaQ is a uint8 type with values ranging from 0 to 4 (could be further optimized with ap_int<4>)
+   G. gradSup is uint16 rather than float
+   H. strongEdges, thresholdedEdges, and finalEdges are uint8 with values ranging from 0 to 2 (could be further optimized with ap_int<2> and ap_int<3>)
+   I. currentPixel lists are int32 since they store row,column indices. sPyC currently automatically uses int (ie. int32) datatype for loop variables so this matches the assignment/indexing types

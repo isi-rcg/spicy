@@ -1,0 +1,64 @@
+The Software is made available for academic or non-commercial purposes only. 
+The license is for a copy of the program for an unlimited term. Individuals 
+requesting a license for commercial use must pay for a commercial license. 
+
+USC Stevens Institute for Innovation
+University of Southern California
+1150 S. Olive Street, Suite 2300
+Los Angeles, CA 90115, USA
+ATTN: Accounting
+
+DISCLAIMER. USC MAKES NO EXPRESS OR IMPLIED WARRANTIES, EITHER IN FACT OR 
+BY OPERATION OF LAW, BY STATUTE OR OTHERWISE, AND USC SPECIFICALLY AND 
+EXPRESSLY DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY OF MERCHANTABILITY OR 
+FITNESS FOR A PARTICULAR PURPOSE, VALIDITY OF THE SOFTWARE OR ANY OTHER 
+INTELLECTUAL PROPERTY RIGHTS OR NON-INFRINGEMENT OF THE INTELLECTUAL 
+PROPERTY OR OTHER RIGHTS OF ANY THIRD PARTY. SOFTWARE IS MADE AVAILABLE 
+AS-IS. LIMITATION OF LIABILITY.  TO THE MAXIMUM EXTENT PERMITTED BY LAW, 
+IN NO EVENT WILL USC BE LIABLE TO ANY USER OF THIS CODE FOR ANY INCIDENTAL, 
+CONSEQUENTIAL, EXEMPLARY OR PUNITIVE DAMAGES OF ANY KIND, LOST GOODWILL, 
+LOST PROFITS, LOST BUSINESS AND/OR ANY INDIRECT ECONOMIC DAMAGES WHATSOEVER, 
+REGARDLESS OF WHETHER SUCH DAMAGES ARISE FROM CLAIMS BASED UPON CONTRACT, 
+NEGLIGENCE, TORT (INCLUDING STRICT LIABILITY OR OTHER LEGAL THEORY), A 
+BREACH OF ANY WARRANTY OR TERM OF THIS AGREEMENT, AND REGARDLESS OF 
+WHETHER USC WAS ADVISED OR HAD REASON TO KNOW OF THE POSSIBILITY OF 
+INCURRING SUCH DAMAGES IN ADVANCE.
+
+For commercial license pricing and annual commercial update and support pricing, please contact:
+Rakesh Pandit
+USC Stevens Institute for Innovation
+University of Southern California
+1150 S. Olive Street, Suite 2300
+Los Angeles, CA 90115, USA
+Tel: +1 213-821-3552
+Fax: +1 213-821-5001
+Email: rakeshvp@usc.edu and CC to: accounting@stevens.usc.edu
+
+
+
+Original Version
+Author: Sam Skalicky, skalicky@isi.edu
+Institution: Information Sciences Institute, University of Southern California
+
+
+Reference code downloaded from: https://rosettacode.org/wiki/Canny_edge_detector#Python
+
+---------------------------------------------
+This initial code did not work using latest Python3.6, the following changes were required:
+
+1. The package import from scipy.misc imread and imshow modules were not found. Instead, we the same functions from cv2
+
+2. Since were using cv2, we had to change the call to imread from "im = imread("test.jpg", mode="L")" to "im = cv2.imread("gray.png", 0)"
+
+3. Since were using cv2, we had to scale the data values so that cv2.imshow would work correctly. Originally, finalEdges is a float data type with values ranging from [0.0 to 1.0]. We scaled the data to the range [0 to 255], and then changed the data type from float to uint8.
+
+4. To replace the scipy imshow(finalEdges) we used the cv2 equivalent
+---------------------------------------------
+
+The file 'reference.py' is the reference code from the website mentioned above. It does not work using Python3.6, it is mainly here for archival purposes.
+
+The file 'original.py' is the code in reference.py with the 4 modifications described above.
+
+The file 'video.py' is the code in original.py but uses the VideoCapture object (ie. webcam) rather than loading an image from a file.
+
+The file 'sample.png' is an example 320x240 input image

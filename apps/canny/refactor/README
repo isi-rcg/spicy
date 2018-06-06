@@ -1,0 +1,62 @@
+The Software is made available for academic or non-commercial purposes only. 
+The license is for a copy of the program for an unlimited term. Individuals 
+requesting a license for commercial use must pay for a commercial license. 
+
+USC Stevens Institute for Innovation
+University of Southern California
+1150 S. Olive Street, Suite 2300
+Los Angeles, CA 90115, USA
+ATTN: Accounting
+
+DISCLAIMER. USC MAKES NO EXPRESS OR IMPLIED WARRANTIES, EITHER IN FACT OR 
+BY OPERATION OF LAW, BY STATUTE OR OTHERWISE, AND USC SPECIFICALLY AND 
+EXPRESSLY DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY OF MERCHANTABILITY OR 
+FITNESS FOR A PARTICULAR PURPOSE, VALIDITY OF THE SOFTWARE OR ANY OTHER 
+INTELLECTUAL PROPERTY RIGHTS OR NON-INFRINGEMENT OF THE INTELLECTUAL 
+PROPERTY OR OTHER RIGHTS OF ANY THIRD PARTY. SOFTWARE IS MADE AVAILABLE 
+AS-IS. LIMITATION OF LIABILITY.  TO THE MAXIMUM EXTENT PERMITTED BY LAW, 
+IN NO EVENT WILL USC BE LIABLE TO ANY USER OF THIS CODE FOR ANY INCIDENTAL, 
+CONSEQUENTIAL, EXEMPLARY OR PUNITIVE DAMAGES OF ANY KIND, LOST GOODWILL, 
+LOST PROFITS, LOST BUSINESS AND/OR ANY INDIRECT ECONOMIC DAMAGES WHATSOEVER, 
+REGARDLESS OF WHETHER SUCH DAMAGES ARISE FROM CLAIMS BASED UPON CONTRACT, 
+NEGLIGENCE, TORT (INCLUDING STRICT LIABILITY OR OTHER LEGAL THEORY), A 
+BREACH OF ANY WARRANTY OR TERM OF THIS AGREEMENT, AND REGARDLESS OF 
+WHETHER USC WAS ADVISED OR HAD REASON TO KNOW OF THE POSSIBILITY OF 
+INCURRING SUCH DAMAGES IN ADVANCE.
+
+For commercial license pricing and annual commercial update and support pricing, please contact:
+Rakesh Pandit
+USC Stevens Institute for Innovation
+University of Southern California
+1150 S. Olive Street, Suite 2300
+Los Angeles, CA 90115, USA
+Tel: +1 213-821-3552
+Fax: +1 213-821-5001
+Email: rakeshvp@usc.edu and CC to: accounting@stevens.usc.edu
+
+
+
+Original Version
+Author: Sam Skalicky, skalicky@isi.edu
+Institution: Information Sciences Institute, University of Southern California
+
+
+
+This is the refactored version of the algorithm modified from operating on frame buffers (whole copies of the frame) to line buffers. This version currently requires 4x 5-line buffers (20 lines total). It is implemented in a pipelined fashion such that computation occurs in the following sequence:
+
+0 - copy into gaussian buffer[0]
+1 - copy into gaussian buffer[1]
+2 - copy into gaussian buffer[2]
+3 - copy into gaussian buffer[3], gaussian computes row 0 into buffer[0]
+4 - copy into gaussian buffer[4], gaussian computes row 1 into buffer[1]
+5 - copy into gaussian buffer[0], gaussian computes row 2 into buffer[2]
+6 - copy into gaussian buffer[1], gaussian computes row 3 into buffer[3], sobel computes row 0 into x,y buffers[0]
+7 - copy into gaussian buffer[2], gaussian computes row 4 into buffer[4], sobel computes row 1 into x,y buffers[1], gradient computes row 0 into buffer[0]
+8 - copy into gaussian buffer[3], gaussian computes row 5 into buffer[5], sobel computes row 2 into x,y buffers[2], gradient computes row 1 into buffer[1]
+9 - copy into gaussian buffer[4], gaussian computes row 6 into buffer[6], sobel computes row 3 into x,y buffers[3], gradient computes row 2 into buffer[2]
+10- copy into gaussian buffer[0], gaussian computes row 7 into buffer[7], sobel computes row 4 into x,y buffers[4], gradient computes row 3 into buffer[3], direction/thresh computes row 0 into buffers[0]
+
+However, two copies of the frame are still necessary for the final thresholding computation into the final edges
+
+There are two versions of the code: test.py and python.py. This is because there is a problem with the numpy.sqrt function operating on non-float data types. Also, in C there are two versions of sqrt: sqrt() which operates on doubles, and sqrtf() which operates on floats. Numpy only has the one sqrt() function. In order to be able to allow the user to choose the level of precision to compute square-root we added support for numpy.sqrtf() which does not actually exist in Numpy. Similarly, with arctan2 and arctan2f in C but only numpy.arctan2.
+
