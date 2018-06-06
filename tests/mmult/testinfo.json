@@ -1,0 +1,5 @@
+{
+"func": "mmult", 
+"pass": true,
+"iter": 100
+}
