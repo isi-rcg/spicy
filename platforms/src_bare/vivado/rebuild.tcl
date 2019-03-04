@@ -1050,4 +1050,10 @@ CONFIG.CONST_VAL {0} \
 
 create_root_design ""
 
+make_wrapper -files [get_files ./pynq_bare.srcs/sources_1/bd/pynq_bare/pynq_bare.bd] -top
+add_files -norecurse ./pynq_bare.srcs/sources_1/bd/pynq_bare/hdl/pynq_bare_wrapper.v
 
+generate_target all [get_files  ./pynq_bare.srcs/sources_1/bd/pynq_bare/pynq_bare.bd]
+
+validate_bd_design -force
+source pynq_pfm.tcl
