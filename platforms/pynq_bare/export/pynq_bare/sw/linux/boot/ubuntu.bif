@@ -1,7 +1,0 @@
-/* linux */
-the_ROM_image:
-{
-  [bootloader]<linux/boot/fsbl.elf>
-  <bitstream>
-  <linux/boot/ubuntu_u-boot.elf>
-}
