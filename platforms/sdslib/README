@@ -1,0 +1,18 @@
+Building SDSoC library shared object
+1. find libsds_lib.a file in SDSoC installation
+   A. "which sds++" will return something like "/opt/Xilinx/SDx/2018.2/bin/sds++"
+   B. "find /opt/Xilinx/SDx/2018.2 -name libsds_lib.a" will return something like:
+
+      /opt/Xilinx/SDx/2018.2/target/aarch32-none/lib/libsds_lib.a
+      /opt/Xilinx/SDx/2018.2/target/aarch64-linux/lib/libsds_lib.a
+      /opt/Xilinx/SDx/2018.2/target/aarch32-linux/lib/libsds_lib.a
+      /opt/Xilinx/SDx/2018.2/target/aarch64-none/lib/libsds_lib.a
+      /opt/Xilinx/SDx/2018.2/target/armr5-none/lib/libsds_lib.a
+      /opt/Xilinx/SDx/2018.2/target/microblaze-none/lib/libsds_lib.a
+      /opt/Xilinx/SDx/2018.2/target/x86/lib/libsds_lib.a
+      
+      pick the one that you need for your platform. For pynq z1, we need .../aarch32-linux/lib/libsds_lib.a
+
+2. Copy libsds_lib.a to this directory
+
+3. "make"
