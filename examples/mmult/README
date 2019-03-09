@@ -1,93 +1,117 @@
-The Software is made available for academic or non-commercial purposes only. 
-The license is for a copy of the program for an unlimited term. Individuals 
-requesting a license for commercial use must pay for a commercial license. 
-
-USC Stevens Institute for Innovation
-University of Southern California
-1150 S. Olive Street, Suite 2300
-Los Angeles, CA 90115, USA
-ATTN: Accounting
-
-DISCLAIMER. USC MAKES NO EXPRESS OR IMPLIED WARRANTIES, EITHER IN FACT OR 
-BY OPERATION OF LAW, BY STATUTE OR OTHERWISE, AND USC SPECIFICALLY AND 
-EXPRESSLY DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY OF MERCHANTABILITY OR 
-FITNESS FOR A PARTICULAR PURPOSE, VALIDITY OF THE SOFTWARE OR ANY OTHER 
-INTELLECTUAL PROPERTY RIGHTS OR NON-INFRINGEMENT OF THE INTELLECTUAL 
-PROPERTY OR OTHER RIGHTS OF ANY THIRD PARTY. SOFTWARE IS MADE AVAILABLE 
-AS-IS. LIMITATION OF LIABILITY.  TO THE MAXIMUM EXTENT PERMITTED BY LAW, 
-IN NO EVENT WILL USC BE LIABLE TO ANY USER OF THIS CODE FOR ANY INCIDENTAL, 
-CONSEQUENTIAL, EXEMPLARY OR PUNITIVE DAMAGES OF ANY KIND, LOST GOODWILL, 
-LOST PROFITS, LOST BUSINESS AND/OR ANY INDIRECT ECONOMIC DAMAGES WHATSOEVER, 
-REGARDLESS OF WHETHER SUCH DAMAGES ARISE FROM CLAIMS BASED UPON CONTRACT, 
-NEGLIGENCE, TORT (INCLUDING STRICT LIABILITY OR OTHER LEGAL THEORY), A 
-BREACH OF ANY WARRANTY OR TERM OF THIS AGREEMENT, AND REGARDLESS OF 
-WHETHER USC WAS ADVISED OR HAD REASON TO KNOW OF THE POSSIBILITY OF 
-INCURRING SUCH DAMAGES IN ADVANCE.
-
-For commercial license pricing and annual commercial update and support pricing, please contact:
-Rakesh Pandit
-USC Stevens Institute for Innovation
-University of Southern California
-1150 S. Olive Street, Suite 2300
-Los Angeles, CA 90115, USA
-Tel: +1 213-821-3552
-Fax: +1 213-821-5001
-Email: rakeshvp@usc.edu and CC to: accounting@stevens.usc.edu
+Hey Andy, heres the gist:
 
 
+Start on a linux box
+----------------------------------
+1. Run the python code to test:
 
-Original Version
-Author: Sam Skalicky, skalicky@isi.edu
-Institution: Information Sciences Institute, University of Southern California
+python3.6 test.py
 
+It should print out all this stuff:
 
+@time: 25991.91665649414 us
+a = [[   1    2    3 ...   30   31   32]
+ [  33   34   35 ...   62   63   64]
+ [  65   66   67 ...   94   95   96]
+ ...
+ [ 929  930  931 ...  958  959  960]
+ [ 961  962  963 ...  990  991  992]
+ [ 993  994  995 ... 1022 1023 1024]]
 
-Name: mmult
+b = [[   1    2    3 ...   30   31   32]
+ [  33   34   35 ...   62   63   64]
+ [  65   66   67 ...   94   95   96]
+ ...
+ [ 929  930  931 ...  958  959  960]
+ [ 961  962  963 ...  990  991  992]
+ [ 993  994  995 ... 1022 1023 1024]]
 
-Description:
-This example shows a complete end-to-end use case for implementing a python function on the Pynq platform. It shows how to:
-     A. call the source-to-source translator, sPyC, and convert a Python function HLS-suitable C code
-     B. call the python linker, Pylon, to generate a wrapper/binding
-     C. call the python rewriter, Pyrite, to rewrite the original source code to call the C function
-     D. run SDSoC to generate the hardware system and drivers
-     E. compile the SDSoC drivers for use with Python
-     F. Integrate all the necessary files into a single directory to be copied onto the Pynq board. 
-     G. Copy the folder onto the Pynq board and execute the accelerated code on the Pynq board.
+c = [[  349712   350240   350768 ...   365024   365552   366080]
+ [  858640   860192   861744 ...   903648   905200   906752]
+ [ 1367568  1370144  1372720 ...  1442272  1444848  1447424]
+ ...
+ [15108624 15138848 15169072 ... 15985120 16015344 16045568]
+ [15617552 15648800 15680048 ... 16523744 16554992 16586240]
+ [16126480 16158752 16191024 ... 17062368 17094640 17126912]]
 
-Instructions:
-0. make
-   This performs steps A-C identified above
-   
-1. make build
-   This compiles the generated C code with the wrapper into a python package
+2. Generate C code for the mmult function:
 
-2. make test
-   This executes the original python code, then executes the rewritten python code to call the generated C from python for testing
+make
 
-3. source run_sdsoc.tcl (or chmod +x run_sdsoc.tcl; ./run_sdsoc.tcl)
-   This performs step D,E and F identified above
+3. Test the generated C code by compiling an executable with main.cpp:
 
-The following steps perform step G:
-Note: Please change the address as per your system/board and the directory where you want the boot folder to be copied on the board. 
+make compile
 
-4. scp -r boot/ xilinx@pynq:/home/xilinx
-   This copies the files needed to run on the board to the board. Please change the address as per your system/board and the directory where you want the boot folder to be copied on the board.
+4. Test the C code with the test main:
 
-5. ssh xilinx@pynq
-   This connects to the board via ssh
+./test
 
-6. cd boot
-   This is the directory we copied in step 4
+It should print out all this stuff:
 
-7. chmod +x setup.sh
-   This makes the setup script executable
+starting...
+calling mmult directly
+Elapsed time 75 us
+Results match expected
+calling mmult indirectly
+Elapsed time 75 us
+Results match expected
+finished
 
-8. sudo su
-    This changes us to the root user which is necessary to configure linux (download bitstream)
+5. Source the 2018.3 tools settings script
+6. Do the build by:
 
-9. ./setup.sh
-    This compiles the python library on the board for the ARM architecture, and downloads the bitstream
+source run_sdsoc.tcl
 
-10. python3.6 mmult_hw.py
-    This executes the python script, runs the application that uses the accelerator
-    
+7. When its done, build the c++ test by:
+
+make sdscc
+
+This compiles a test.elf (equivalient to test we ran earlier)
+
+8. Now build the same test by linking against the libcaller.so:
+
+make link
+
+This compiles link.elf (equivalent of test.elf, but links against libcaller.so instead of statically linking the objs)
+
+8. Copy: test.elf, libcaller.so.bit, link.elf over to the board. 
+
+Now move to the board ssh
+---------------------------------------
+9. Program the bitstream by running this in python3.6:
+
+import pynq
+bit = pynq.Bitstream('test.elf.bit')
+bit.download()
+
+10. Now run the test:
+
+./test.elf
+
+You should see this stuff print out:
+
+starting...
+calling mmult directly
+Elapsed time 75 us
+Results match expected
+calling mmult indirectly
+Elapsed time 36 us
+Results match expected
+finished
+
+So at least we validated that what works on the linux box also works on the pynq board and that the SDSoC generated accelerator works.
+
+11. Now run the link test:
+
+LD_LIBRARY_PATH=$(pwd) ./link.elf 
+
+I see this print out:
+
+starting...
+calling mmult directly
+Elapsed time 2513 us
+Results match expected
+calling mmult indirectly
+Elapsed time 77 us
+Results match expected
+finished
