@@ -14,4 +14,4 @@ Finding SDSoC library shared object
       
       pick the one that you need for your platform. For pynq z1, we need .../aarch32-linux/lib/libsds_lib.so
 
-2. Copy libsds_lib.so to this directory
+2. Copy libsds_lib.so to the board at /usr/lib one time after setting up a new board image
