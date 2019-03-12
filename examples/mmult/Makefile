@@ -30,10 +30,10 @@ test:
 #Delete the unnecesaary files
 clean:
 	rm -rf mmult.* spyc.* pynq.py spyc_*
-	rm -rf c_module* caller.cpp test link.o
+	rm -rf c_module* caller.cpp test link.o pynqlib.*
 	rm -rf build setup* caller* sw test.elf  test.elf.bit
 	rm -rf wrapper.cpp rewrite.py libcaller* link.elf
-	rm -rf _sds .Xil sd_card app.py __pycache__
+	rm -rf _sds .Xil sd_card app.py __pycache__ libxlnk_cma.h
 	rm -rf main.o lib main run_sdsoc.tcl mmult_hw.py
 
 #Delete the boot folder
