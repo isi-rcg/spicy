@@ -1,0 +1,17 @@
+####
+# In 2018.3 SDSoC has prebuilt shared objects already available
+####
+
+Finding SDSoC library shared object
+1. find libsds_lib.so file in SDSoC installation
+   A. "which sds++" will return something like "/opt/Xilinx/SDx/2018.3/bin/sds++"
+   B. "find /opt/Xilinx/SDx/2018.3 -name libsds_lib.so" will return something like:
+
+      /opt/Xilinx/SDx/2018.3/target/aarch32-linux/lib/libsds_lib.so
+      /opt/Xilinx/SDx/2018.3/target/x86/lib/libsds_lib.so
+      /opt/Xilinx/SDx/2018.3/target/aarch64-linux/lib/libsds_lib.so
+      /opt/Xilinx/SDx/2018.3/samples/libmatrix/use/lib/shared/libsds_lib.so
+      
+      pick the one that you need for your platform. For pynq z1, we need .../aarch32-linux/lib/libsds_lib.so
+
+2. Copy libsds_lib.so to the board at /usr/lib one time after setting up a new board image

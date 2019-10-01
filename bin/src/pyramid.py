@@ -70,7 +70,7 @@ def generate(funcDecl,source,header,mod):
     wrapper += 'import numpy\n'
     wrapper += 'from distutils.core import setup, Extension\n'
     wrapper += '\n'
-    wrapper += 'c_module = Extension("%s", sources=["spyc.cpp","wrapper.cpp"],include_dirs=[numpy.get_include()],libraries = ["caller","sds_lib"],library_dirs = [".","/usr/lib"])' % (mod)
+    wrapper += 'c_module = Extension("%s", sources=["spyc.cpp","wrapper.cpp"],include_dirs=[numpy.get_include()],libraries = ["caller"],library_dirs = ["."])' % (mod)
     wrapper += '\n'
     wrapper += 'setup(ext_modules=[%s])\n' % (mod)
     
@@ -90,8 +90,8 @@ def generate(funcDecl,source,header,mod):
         script = ''
         script += 'sds++ -c -fPIC -sds-pf ' + platform + ' -sds-hw ' + name + ' ' + source + ' -sds-end ' + source + ' -o ' + source_name + '.o\n'
         script += 'sds++ -c -fPIC -sds-pf ' + platform + ' -sds-hw ' + name + ' ' + source + ' -sds-end caller.cpp -o caller.o\n'
-        script += 'sds++ -sds-pf ' + platform + ' -shared ' +source_name + '.o caller.o -o libcaller.so\n'
-        script += 'arm-linux-gnueabihf-ar crs libcaller.a _sds/swstubs/cf_stub.o _sds/swstubs/portinfo.o _sds/swstubs/' + source_name + '.o _sds/swstubs/caller.o\n'
+        script += 'sdscc -c -fPIC -sds-pf ' + platform + ' -sds-hw ' + name + ' ' + source + ' -sds-end pynqlib.c -o pynqlib.o\n'
+        script += 'sds++ -sds-pf ' + platform + ' -shared ' +source_name + '.o caller.o pynqlib.o -o libcaller.so\n'
         script += 'rm -rf boot\n'
         script += 'mkdir boot\n'
         script += 'cp setup_hw.py boot\n'
@@ -103,8 +103,8 @@ def generate(funcDecl,source,header,mod):
         script += 'cp spyc.cpp boot\n'
         script += 'cp spyc.h boot\n'
         script += 'cp spyc.py boot\n'
-        script += 'cp _sds/p0/.boot/libcaller.so.bit.bin boot\n'
-        script += 'cp libcaller.a boot\n'
+        script += 'cp libcaller.so.bit boot\n'
+        script += 'cp libcaller.so boot\n'
         script += 'cp setup.sh boot\n'
         fp = open('run_sdsoc.tcl','w')
         fp.write(script)
@@ -140,6 +140,8 @@ loc = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(sys.argv[
 lib_c = os.path.join(loc,'lib','spyc.cpp')
 lib_h = os.path.join(loc,'lib','spyc.h')
 lib_py = os.path.join(loc,'lib','spyc.py')
+pynqlib_c = os.path.join(loc,'lib','pynqlib.c')
+pynqlib_h = os.path.join(loc,'lib','libxlnk_cma.h')
 
 
 parser = argparse.ArgumentParser()
@@ -286,7 +288,7 @@ else:
     script += 'cp spyc.h boot\n'
     script += 'cp spyc.py boot\n'
     script += 'cp _sds/p0/.boot/libcaller.so.bit.bin boot\n'
-    script += 'cp libcaller.a boot\n'
+    script += 'cp libcaller.so boot\n'
     script += 'cp setup.sh boot\n'
     fp = open('run_sdsoc.tcl','w')
     fp.write(script)
@@ -345,7 +347,7 @@ text += '    echo "You must be root!"\n'
 text += '    kill -INT $$\n'
 text += 'fi\n'
 text += 'ulimit -s unlimited\n'
-text += 'cat libcaller.so.bit.bin > /dev/xdevcfg\n'
+text += 'python3.6 -c "import pynq; bit = pynq.Bitstream(\'libcaller.so.bit\'); bit.download()"\n'
 text += 'DIR="$(pwd)"\n'
 text += 'export LD_LIBRARY_PATH=$DIR:$LD_LIBRARY_PATH\n'
 text += 'python3.6 setup_hw.py build_ext --inplace\n'
@@ -361,5 +363,7 @@ if verbose:
 shutil.copyfile(lib_c,os.path.os.path.basename(lib_c))
 shutil.copyfile(lib_h,os.path.os.path.basename(lib_h))
 shutil.copyfile(lib_py,os.path.os.path.basename(lib_py))
+shutil.copyfile(pynqlib_c,os.path.os.path.basename(pynqlib_c))
+shutil.copyfile(pynqlib_h,os.path.os.path.basename(pynqlib_h))
 # Done!
 
