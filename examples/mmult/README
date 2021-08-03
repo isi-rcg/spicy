@@ -88,6 +88,6 @@ Note: Please change the address as per your system/board and the directory where
 9. ./setup.sh
     This compiles the python library on the board for the ARM architecture, and downloads the bitstream
 
-10. python3.6 mmult_hw.py
+10. python3 mmult_hw.py
     This executes the python script, runs the application that uses the accelerator
     

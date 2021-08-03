@@ -52,6 +52,7 @@ Initial Ubuntu configuration
 Git:
 sudo apt install git
 
+# Python 3.8 should come preinstalled on most distros. No need for this anymore
 Python3.6:
 sudo apt-get install software-properties-common python-software-properties
 sudo add-apt-repository ppa:jonathonf/python-3.6

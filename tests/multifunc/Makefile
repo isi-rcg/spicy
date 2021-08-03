@@ -3,7 +3,7 @@ include ../obj.mk
 all:
 	spyc code.py -v
 	pylon code.py -source out.cpp -header out.h -v
-	python3.6 setup_sw.py build_ext --inplace	
+	python3 setup_sw.py build_ext --inplace	
 	pyrite code.py -o rewrite.py
 	pyramid code.py -source out.cpp -header out.h -o out_hw
 

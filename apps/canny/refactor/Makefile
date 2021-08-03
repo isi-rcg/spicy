@@ -10,15 +10,15 @@ all:
 	pyrite -func CannyEdgeDetector test.py -o rewrite.py
 
 	#compile generated code and wrapper into python package
-	python3.6 setup_sw.py build_ext --inplace	
+	python3 setup_sw.py build_ext --inplace	
 
 #execute python testbench
 test:
-	python3.6 python.py
+	python3 python.py
 
 #execute python with accelerated function (in C/SW)
 run:
-	python3.6 rewrite.py
+	python3 rewrite.py
 
 #cleanup 
 clean:

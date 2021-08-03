@@ -4,4 +4,4 @@
 #get directory that this script lives at
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 FILE="$DIR/src/pyrite.py"
-python3.6 $FILE $@
+python3 $FILE $@

@@ -348,7 +348,7 @@ text += 'ulimit -s unlimited\n'
 text += 'cat libcaller.so.bit.bin > /dev/xdevcfg\n'
 text += 'DIR="$(pwd)"\n'
 text += 'export LD_LIBRARY_PATH=$DIR:$LD_LIBRARY_PATH\n'
-text += 'python3.6 setup_hw.py build_ext --inplace\n'
+text += 'python3 setup_hw.py build_ext --inplace\n'
 fp = open('setup.sh','w')
 fp.write(text)
 fp.close()

@@ -8,12 +8,12 @@ all:
 
 #compile generated code and wrapper into python package
 build:
-	python3.6 setup_sw.py build_ext --inplace	
+	python3 setup_sw.py build_ext --inplace	
 
 #execute original python code, then execute rewritten python code
 test:
-	python3.6 test.py
-	python3.6 rewrite.py
+	python3 test.py
+	python3 rewrite.py
 
 #Delete the unnecesaary files
 clean:
