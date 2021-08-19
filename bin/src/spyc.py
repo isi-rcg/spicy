@@ -119,12 +119,19 @@ def genHeader(funcDecl,outfile):
 def gen_header(funcDecl):
     #unpack
     ret_type,name,args = funcDecl
-    header = '%s %s(' % (ret_type.getType(),name)
+    header = ''
     cnt = 0
+    header +='\n'
+    for arg in args:
+        header += '#define ' + arg.name.upper() +'_SIZE ' + str(arg.size()) + '\n'
+
+    header +='\n'
+    header += '%s %s(' % (ret_type.getType(),name)
     for arg in args:
         if cnt > 0:
             header += ','
         header += arg.getDecl()
+        #header += str(arg.getType()) + ' ' + arg.name + '[' + arg.name.upper()+'_SIZE]'
         cnt += 1
     header += ');\n'
 
@@ -138,8 +145,7 @@ def genCaller(funcDecl,header):
     #caller function decl
     (src,hdr) = gen_caller(funcDecl)
     #generate c/python wrapper
-    code = ''
-    code += ('#include "%s"\n' % header)
+    code = ('#include "caller.h"\n')
     code += ('\n')
     code += src
     
@@ -149,10 +155,14 @@ def genCaller(funcDecl,header):
     fp.close()
 
     #Write out header
-    head = ''
-    head += ('#include "%s"\n' % header)
+    head = '#pragma once\n'
+    # TODO - could probably structure the includes a bit nicer
+    head += ('#include <stdint.h>\n')
+    head += ('#include <math.h>\n')
+    head += ('#include <vector>\n')
+    head += ('#include <fstream>\n')
+    head += ('#include <iostream>\n')
     head += ('\n')
-    #caller function decl
     head += hdr
 
     fp = open('caller.h','w')
@@ -162,41 +172,139 @@ def genCaller(funcDecl,header):
 ######################
 # generate
 #   generate the wrapper code to call C/C++ from python and returns it
+# TODO: write out the setup/tear down for the OpenCL code here?
+# Need the IO ports to set up memory on the device, etc
 def gen_caller(funcDecl):
     ret_type,name,args = funcDecl
+
     code = ret_type.getType() + ' ' + name + '_caller('
     cnt = 0
     for arg in args:
         if cnt > 0:
             code += ','
-        code += arg.getDecl()
+        code += str(arg.getType()) + ' ' + arg.name + '[' + arg.name.upper()+'_SIZE]'
         cnt += 1
-    code += ') {\n'
-    code += '   /* call function */\n'
-    if ret_type.primitive != 'void':
-        code += '   return '
-    else:
-        code += '   '
-    code += '%s(' % name
+    code += ', const char* xclbinFilename) {\n' # need to pass the pointer to the xclbin filename
+    #### SETUP  Standard to _all_ openCL kernels ####
+    code += '    size_t size_in_bytes = DATA_SIZE * sizeof(int);\n'
+    code += '    cl_int err;\n\n'
+
+    code += '    std::vector<cl::Device> devices;\n'
+    code += '    cl::Device device;\n'
+    code += '    std::vector<cl::Platform> platforms;\n'
+    code += '    bool found_device = false;\n\n'
+
+    code += '    //traversing all Platforms To find Xilinx Platform and targeted\n'
+    code += '    //Device in Xilinx Platform\n'
+    code += '    cl::Platform::get(&platforms);\n'
+    code += '    for(size_t i = 0; (i < platforms.size() ) & (found_device == false) ;i++){\n'
+    code += '        cl::Platform platform = platforms[i];\n'
+    code += '        std::string platformName = platform.getInfo<CL_PLATFORM_NAME>();\n'
+    code += '        if ( platformName == "Xilinx"){\n'
+    code += '            devices.clear();\n'
+    code += '            platform.getDevices(CL_DEVICE_TYPE_ACCELERATOR, &devices);\n'
+    code += '            if (devices.size()){\n'
+    code += '                    device = devices[0];\n'
+    code += '                    found_device = true;\n'
+    code += '                    break;\n'
+    code += '            }\n'
+    code += '        }\n'
+    code += '    }\n\n'
+
+    code += '    if (found_device == false){\n'
+    code += '       std::cout << "Error: Unable to find Target Device " << device.getInfo<CL_DEVICE_NAME>() << std::endl;\n'
+    code += '       exit(-1);\n'
+    code += '    }\n\n'
+
+    code += '    // Creating Context and Command Queue for selected device\n'
+    code += '    cl::Context context(device);\n'
+    code += '    cl::CommandQueue q(context, device, CL_QUEUE_PROFILING_ENABLE);\n\n'
+
+    code += '    // Load xclbin\n'
+    code += '    std::cout << "Loading: " << xclbinFilename << std::endl;\n'
+    code += '    std::ifstream bin_file(xclbinFilename, std::ifstream::binary);\n'
+    code += '    bin_file.seekg (0, bin_file.end);\n'
+    code += '    unsigned nb = bin_file.tellg();\n'
+    code += '    bin_file.seekg (0, bin_file.beg);\n'
+    code += '    char *buf = new char [nb];\n'
+    code += '    bin_file.read(buf, nb);\n\n'
+
+    code += '    // Creating Program from Binary File\n'
+    code += '    cl::Program::Binaries bins;\n'
+    code += '    bins.push_back({buf,nb});\n'
+    code += '    devices.resize(1);\n'
+    code += '    cl::Program program(context, devices, bins);\n\n'
+    #### END Setup #### 
+    
+    code += '    // call function\n'
+    code += '    cl::Kernel ' + name + '_kernel(program, "' + name + '");\n\n'
+
+    ### Start Allocate Buffers for the Hardware ###
+    for arg in args:
+        code += '    cl::Buffer buffer_' + arg.name +'(context, CL_MEM_USE_HOST_PTR, size_in_bytes,' + arg.name + ', &err);\n'
+    code += '\n'
+    code += '    int nargs = 0;\n'
+    for arg in args:
+        code += '    ' + name + '_kernel.setArg(nargs++, buffer_' + arg.name + ');\n'
+    code += '\n'
+    # from Host to Accelerator
+    code += '    q.enqueueMigrateMemObjects({'
     cnt = 0
     for arg in args:
         if cnt > 0:
             code += ','
-        code += '%s' % arg.name
+        code += 'buffer_%s' % arg.name
         cnt += 1
-    code += ');\n'
+    code += '}, 0 /* 0 means from host */);\n'
+    code += '    q.enqueueTask(%s_kernel);\n' % name
+    # from Accelerator to Host
+    code += '    q.enqueueMigrateMemObjects({'
+    cnt = 0
+    for arg in args:
+        if cnt > 0:
+            code += ','
+        code += 'buffer_%s' % arg.name
+        cnt += 1
+    code += '}, CL_MIGRATE_MEM_OBJECT_HOST);\n\n'
+    code += '    q.finish();\n\n'
+    for arg in args:
+        code += '    q.enqueueUnmapMemObject(buffer_' + arg.name + ', ' + arg.name + ');\n'
+    code += '\n'
+    code += '    q.finish();\n\n'
+    ### End Allocate Buffers for the Hardware ###
+
     code += '\n'
     code += '}\n'
 
-    #Write out header
-    head = ret_type.getType() + ' ' + name + '_caller('
+
+    ##############################
+    ###### Write out header ######
+    ##############################
+    
+    head = ''
+    for arg in args:
+        head += '#define ' + arg.name.upper() +'_SIZE ' + str(arg.size()) + '\n'
+    head +='\n'
+    
+    # -1 means that there isn't an associated value with the define
+    define_args = [('CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY', 1), ('CL_HPP_MINIMUM_OPENCL_VERSION', 120), ('CL_HPP_TARGET_OPENCL_VERSION', 120), ('CL_USE_DEPRECATED_OPENCL_1_2_APIS', -1), ('CL_HPP_CL_1_2_DEFAULT_BUILD', -1)]
+    for define_arg in define_args:
+        if define_arg[1] == -1:
+            head += 'define ' + define_arg[0] + '\n'
+        else:
+            head += 'define ' + define_arg[0] + ' ' + str(define_arg[1]) + '\n'
+    head += '#include <CL/cl2.hpp>\n'
+    head +='\n'
+    
+    head += ret_type.getType() + ' ' + name + '_caller('
     cnt = 0
     for arg in args:
         if cnt > 0:
             head += ','
-        head += arg.getDecl()
+        head += str(arg.getType()) + ' ' + arg.name + '[' + arg.name.upper()+'_SIZE]'
+        #head += arg.getDecl()
         cnt += 1
-    head += ');\n'
+    head += ', const char* xclbinFilename);\n' # need to pass the pointer to the xclbin filename
 
     return (code,head)
 
@@ -207,7 +315,7 @@ def convert(node,name):
     code = convert_code(node)
     
     #write out C code to file
-    fp = open(name+'.cpp','w')
+    fp = open(name+'.cpp','w+')
     fp.write('#include <math.h>\n')
     fp.write('#include "%s.h"\n' % name)
     fp.write('\n')
@@ -233,7 +341,6 @@ def convert_code(node):
     if verbose:
         print ("---C Code---------------------------")
         print (code.string)
-
     return code.string
 
 ##########################
@@ -374,15 +481,11 @@ if args.func:
     #setup nested functions 
     (c,h) = nested_funcs(tree,func)
     
-    fp = open(outfile+'.h','w')
-    fp.write('#include <stdint.h>\n')
-    fp.write('#include <math.h>\n')
-    fp.write(h)
-    fp.close()
-
     fp = open(outfile+'.cpp','w')
-    fp.write('#include "%s.h"\n\n' % outfile)
+    fp.write('#include <math.h>\n')
+    fp.write('extern "C" {\n\n')
     fp.write(c)
+    fp.write('\n}\n')
     fp.close()
     
     func_tree = function_pass(tree,func)
@@ -424,7 +527,9 @@ else:
 
     fp = open(outfile+'.cpp','w')
     fp.write('#include "%s.h"\n\n' % outfile)
+    fp.write('extern "C" {\n')
     fp.write(src_c)
+    fp.write('}\n')
     fp.close()
 
     fp = open('caller.cpp','w')

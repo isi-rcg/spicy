@@ -41,7 +41,6 @@
 # Institution: Information Sciences Institute, University of Southern California
 # 
 
-
 #############################################################################################
 # pyramid.py
 #
@@ -70,6 +69,7 @@ def generate(funcDecl,source,header,mod):
     wrapper += 'import numpy\n'
     wrapper += 'from distutils.core import setup, Extension\n'
     wrapper += '\n'
+    wrapper += 'c_module = Extension("%s", sources=["spyc.cpp","wrapper.cpp", "caller.cpp"],include_dirs=[numpy.get_include()],libraries = ["stdc++", "pthread", "OpenCL"],library_dirs = [".","/usr/lib"])' % (mod)
     wrapper += 'c_module = Extension("%s", sources=["spyc.cpp","wrapper.cpp"],include_dirs=[numpy.get_include()],libraries = ["caller"],library_dirs = ["."])' % (mod)
     wrapper += '\n'
     wrapper += 'setup(ext_modules=[%s])\n' % (mod)
@@ -84,31 +84,6 @@ def generate(funcDecl,source,header,mod):
     fp.write(wrapper)
     fp.close()
 
-    if source != None:
-        #generate the tcl script to run the flow
-        source_name = os.path.basename(os.path.splitext(source)[0])
-        script = ''
-        script += 'sds++ -c -fPIC -sds-pf ' + platform + ' -sds-hw ' + name + ' ' + source + ' -sds-end ' + source + ' -o ' + source_name + '.o\n'
-        script += 'sds++ -c -fPIC -sds-pf ' + platform + ' -sds-hw ' + name + ' ' + source + ' -sds-end caller.cpp -o caller.o\n'
-        script += 'sdscc -c -fPIC -sds-pf ' + platform + ' -sds-hw ' + name + ' ' + source + ' -sds-end pynqlib.c -o pynqlib.o\n'
-        script += 'sds++ -sds-pf ' + platform + ' -shared ' +source_name + '.o caller.o pynqlib.o -o libcaller.so\n'
-        script += 'rm -rf boot\n'
-        script += 'mkdir boot\n'
-        script += 'cp setup_hw.py boot\n'
-        script += 'cp '+outfile+'.py boot\n'
-        script += 'cp ' + source + ' boot\n'
-        script += 'cp ' + header + ' boot\n'
-        script += 'cp wrapper.cpp boot\n'
-        script += 'cp caller.h boot\n'
-        script += 'cp spyc.cpp boot\n'
-        script += 'cp spyc.h boot\n'
-        script += 'cp spyc.py boot\n'
-        script += 'cp libcaller.so.bit boot\n'
-        script += 'cp libcaller.so boot\n'
-        script += 'cp setup.sh boot\n'
-        fp = open('run_sdsoc.tcl','w')
-        fp.write(script)
-        fp.close()
 
 ######################
 # getFunction
@@ -148,7 +123,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-verbose',action='store_true',help='print all messages')
 parser.add_argument('-func',metavar='<name>',help='only process this function')
 parser.add_argument('-source',metavar='<file.cpp>',help='c source file containing function definition')
-parser.add_argument('-header',metavar='<file.cpp>',help='c source file containing function definition',required=True)
+parser.add_argument('-header',metavar='<file.cpp>',help='c source file containing function definition')
 parser.add_argument('-pf',metavar='<platform>',help='platform')
 parser.add_argument('-mod',metavar='<name>',help='module name')
 parser.add_argument('-o',metavar='<output_name>',help='rewritten application python file name')
@@ -242,13 +217,6 @@ if args.func:
     for call in callsites:
         lines[call-1] = re.sub('('+func+')',mod+'.'+func+'_wrapper',lines[call-1])
 
-    #replace call to ndarray in old code
-    fstart,fstop = getFuncLineRange(funcTree,len(lines)+1,-1)
-    for idx in range(0,fstart-1):
-        lines[idx-1] = re.sub('[a-zA-Z]*[\.]*(ndarray)','spyc.init_contiguous_ndarray',lines[idx-1])
-    for idx in range(fstop+1,len(lines)):
-        lines[idx-1] = re.sub('[a-zA-Z]*[\.]*(ndarray)','spyc.init_contiguous_ndarray',lines[idx-1])
-
     newcode = '\n'.join(lines)
 
     newcode = imports + newcode
@@ -270,41 +238,11 @@ else:
 
         hw_funcs += '-sds-hw ' + f.name + ' ' + source + ' -sds-end '
 
-    #generate the tcl script to run the flow
-    script = ''    
-    script += 'sds++ -c -fPIC -sds-pf ../../pynq ' + hw_funcs + source + ' -o ' + source_name + '.o\n'
-    script += 'sds++ -c -fPIC -sds-pf ../../pynq -sds-hw ' + f.name + ' ' + source + ' -sds-end caller.cpp -o caller.o\n'
-    script += 'sds++ -sds-pf ../../pynq -shared ' +source_name + '.o caller.o -o libcaller.so\n'
-    script += 'arm-linux-gnueabihf-ar crs libcaller.a _sds/swstubs/cf_stub.o _sds/swstubs/portinfo.o _sds/swstubs/' + source_name + '.o _sds/swstubs/caller.o\n'
-    script += 'rm -rf boot\n'
-    script += 'mkdir boot\n'
-    script += 'cp setup_hw.py boot\n'
-    script += 'cp '+outfile+'.py boot\n'
-    script += 'cp ' + source + ' boot\n'
-    script += 'cp ' + header + ' boot\n'
-    script += 'cp wrapper.cpp boot\n'
-    script += 'cp caller.h boot\n'
-    script += 'cp spyc.cpp boot\n'
-    script += 'cp spyc.h boot\n'
-    script += 'cp spyc.py boot\n'
-    script += 'cp _sds/p0/.boot/libcaller.so.bit.bin boot\n'
-    script += 'cp libcaller.so boot\n'
-    script += 'cp setup.sh boot\n'
-    fp = open('run_sdsoc.tcl','w')
-    fp.write(script)
-    fp.close()
-
     for f in func:
         callsites = findCallers(tree,f.name)
         for call in callsites:
             lines[call-1] = re.sub('('+f.name+')',mod+'.'+f.name+'_wrapper',lines[call-1])
 
-        #replace call to ndarray in old code
-        fstart,fstop = getFuncLineRange(f,len(lines)+1,-1)
-        for idx in range(0,fstart-1):
-            lines[idx-1] = re.sub('[a-zA-Z]*[\.]*(ndarray)','init_contiguous_ndarray',lines[idx-1])
-        for idx in range(fstop+1,len(lines)):
-            lines[idx-1] = re.sub('[a-zA-Z]*[\.]*(ndarray)','init_contiguous_ndarray',lines[idx-1])
 
     newcode = '\n'.join(lines)
     newcode = imports + newcode
@@ -314,7 +252,7 @@ else:
     wrapper += 'import numpy\n'
     wrapper += 'from distutils.core import setup, Extension\n'
     wrapper += '\n'
-    wrapper += 'c_module = Extension("%s", sources=["spyc.cpp","wrapper.cpp"],include_dirs=[numpy.get_include()],libraries = ["caller","sds_lib"],library_dirs = [".","/usr/lib"])' % (mod)
+    wrapper += 'c_module = Extension("%s", sources=["spyc.cpp","wrapper.cpp", "caller.cpp"],include_dirs=[numpy.get_include()],libraries = ["stdc++", "pthread", "OpenCL"],library_dirs = [".","/usr/lib"])' % (mod)
     wrapper += '\n'
     wrapper += 'setup(ext_modules=[%s])\n' % (mod)
     
@@ -338,20 +276,9 @@ fp = open(outfile+'.py','w')
 fp.write(newcode)
 fp.close()
 
-#write out setup script
-ROOT_UID="0"
-
 #Check if run as root
-text = 'if [ "$UID" -ne 0 ] ; then\n'
-text += '    echo "You must be root!"\n'
-text += '    kill -INT $$\n'
-text += 'fi\n'
-text += 'ulimit -s unlimited\n'
-text += 'python3.6 -c "import pynq; bit = pynq.Bitstream(\'libcaller.so.bit\'); bit.download()"\n'
-text += 'DIR="$(pwd)"\n'
-text += 'export LD_LIBRARY_PATH=$DIR:$LD_LIBRARY_PATH\n'
-text += 'python3 setup_hw.py build_ext --inplace\n'
-fp = open('setup.sh','w')
+text = 'python3 setup_hw.py build_ext --inplace\n'
+fp = open('build_hw.sh','w')
 fp.write(text)
 fp.close()
 

@@ -41,7 +41,6 @@
 # Institution: Information Sciences Institute, University of Southern California
 # 
 
-
 import sys
 import ast
 import astpp
@@ -108,7 +107,7 @@ class PastY:
             if hasattr(node,'docstring'):
                 print('\tdocstring: %s' % node.docstring)
             self.printFields(node)
-
+        
         #Process each type of AST node appropriately
         if isinstance(node,ast.Pass):
             res =  self.process_Pass(node)
@@ -594,6 +593,7 @@ class PastY:
     #######################
     # process_FunctionDef
     #    Processes a function definition into a string
+    # TODO - modify the function s.t. the arrays use defines
     def process_FunctionDef(self,node):
         self.scope.push()
         new = PastY()
@@ -608,7 +608,7 @@ class PastY:
             self.scope.put(a.string,a.type)
             args.append(a)
             if i > 0:
-                arg_str += ','
+                arg_str += ', '
             arg_str += a.type.getDecl()
         body = []
         body_str = ''
