@@ -1,0 +1,92 @@
+The Software is made available for academic or non-commercial purposes only. 
+The license is for a copy of the program for an unlimited term. Individuals 
+requesting a license for commercial use must pay for a commercial license. 
+
+ USC Stevens Institute for Innovation
+University of Southern California
+1150 S. Olive Street, Suite 2300
+Los Angeles, CA 90115, USA
+ATTN: Accounting
+
+ DISCLAIMER. USC MAKES NO EXPRESS OR IMPLIED WARRANTIES, EITHER IN FACT OR 
+BY OPERATION OF LAW, BY STATUTE OR OTHERWISE, AND USC SPECIFICALLY AND 
+EXPRESSLY DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY OF MERCHANTABILITY OR 
+FITNESS FOR A PARTICULAR PURPOSE, VALIDITY OF THE SOFTWARE OR ANY OTHER 
+INTELLECTUAL PROPERTY RIGHTS OR NON-INFRINGEMENT OF THE INTELLECTUAL 
+PROPERTY OR OTHER RIGHTS OF ANY THIRD PARTY. SOFTWARE IS MADE AVAILABLE 
+AS-IS. LIMITATION OF LIABILITY.  TO THE MAXIMUM EXTENT PERMITTED BY LAW,       
+IN NO EVENT WILL USC BE LIABLE TO ANY USER OF THIS CODE FOR ANY INCIDENTAL, 
+CONSEQUENTIAL, EXEMPLARY OR PUNITIVE DAMAGES OF ANY KIND, LOST GOODWILL,       
+LOST PROFITS, LOST BUSINESS AND/OR ANY INDIRECT ECONOMIC DAMAGES WHATSOEVER, 
+REGARDLESS OF WHETHER SUCH DAMAGES ARISE FROM CLAIMS BASED UPON CONTRACT, 
+NEGLIGENCE, TORT (INCLUDING STRICT LIABILITY OR OTHER LEGAL THEORY), A 
+BREACH OF ANY WARRANTY OR TERM OF THIS AGREEMENT, AND REGARDLESS OF 
+WHETHER USC WAS ADVISED OR HAD REASON TO KNOW OF THE POSSIBILITY OF 
+INCURRING SUCH DAMAGES IN ADVANCE.
+
+ For commercial license pricing and annual commercial update and support pricing, please contact:
+Rakesh Pandit
+USC Stevens Institute for Innovation
+University of Southern California
+1150 S. Olive Street, Suite 2300
+Los Angeles, CA 90115, USA
+Tel: +1 213-821-3552
+Fax: +1 213-821-5001
+Email: rakeshvp@usc.edu and CC to: accounting@stevens.usc.edu
+
+
+
+ Original Version
+Author: Sam Skalicky, skalicky@isi.edu
+Institution: Information Sciences Institute, University of Southern California
+
+
+
+ Name: mmult
+
+ Description:
+This example shows a complete end-to-end use case for implementing a python function on the Pynq platform. It shows how to:
+     A. call the source-to-source translator, sPyC, and convert a Python function HLS-suitable C code
+     B. call the python linker, Pylon, to generate a wrapper/binding
+     C. call the python rewriter, Pyrite, to rewrite the original source code to call the C function
+     D. run SDSoC to generate the hardware system and drivers
+     E. compile the SDSoC drivers for use with Python
+     F. Integrate all the necessary files into a single directory to be copied onto the Pynq board. 
+     G. Copy the folder onto the Pynq board and execute the accelerated code on the Pynq board.
+
+ Instructions:
+0. make
+   This performs steps A-C identified above
+
+ 1. make build
+   This compiles the generated C code with the wrapper into a python package
+
+ 2. make test
+   This executes the original python code, then executes the rewritten python code to call the generated C from python for testing
+
+ 3. source run_sdsoc.tcl (or chmod +x run_sdsoc.tcl; ./run_sdsoc.tcl)
+   This performs step D,E and F identified above
+
+ The following steps perform step G:
+Note: Please change the address as per your system/board and the directory where you want the boot folder to be copied on the board. 
+
+ 4. scp -r boot/ xilinx@pynq:/home/xilinx
+   This copies the files needed to run on the board to the board. Please change the address as per your system/board and the directory where you want the boot folder to be copied on the board.
+
+ 5. ssh xilinx@pynq
+   This connects to the board via ssh
+
+ 6. cd boot
+   This is the directory we copied in step 4
+
+ 7. chmod +x setup.sh
+   This makes the setup script executable
+
+ 8. sudo su
+    This changes us to the root user which is necessary to configure linux (download bitstream)
+
+ 9. ./setup.sh
+    This compiles the python library on the board for the ARM architecture, and downloads the bitstream
+
+ 10. python3.6 mmult_hw.py
+    This executes the python script, runs the application that uses the accelerator

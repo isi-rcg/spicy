@@ -1,0 +1,12 @@
+When setting up a new board, first start by imaging the SDcard with the appropriate pynq image for the version you're targeting. Keep in mind the Pynq image corresponds to a specific version of Xilinx tools. 
+
+Assuming your board is booted with a fresh Pynq image and you're already connected to an ssh terminal, do:
+
+For 2017.4/Pynq-v2.1
+export GIT_SSL_NO_VERIFY=1
+
+1. git clone https://github.com/ISI-RCG/spicy.git
+2. cd spicy/platforms/sdslib
+3. Get a copy of libsds_lib.a from the relevant Xilinx installation and copy into sdslib folder
+4. make
+5. sudo make install

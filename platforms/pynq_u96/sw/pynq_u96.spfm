@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdx:platform sdx:vendor="xilinx.com"
+              sdx:library="sdx"
+              sdx:name="pynq_u96"
+              sdx:version="1.0"
+              sdx:schemaVersion="1.0"
+              xmlns:sdx="http://www.xilinx.com/sdx">
+    <sdx:description>
+Pynq Ultra96 Board
+    </sdx:description>
+    <sdx:systemConfigurations sdx:defaultConfiguration="ubuntu">
+        <sdx:configuration sdx:name="ubuntu"
+                           sdx:displayName="Ubuntu"
+                           sdx:defaultProcessorGroup="ubuntu"
+                           sdx:runtimes="cpp">
+            <sdx:description>ubuntu</sdx:description>
+            <sdx:bootImages sdx:default="standard">
+                <sdx:image sdx:name="standard"
+                            sdx:bif="ubuntu/boot/ubuntu.bif"
+                            sdx:imageData="ubuntu/ubuntu/image"
+                            sdx:mountPath="/mnt"
+                            sdx:readme="ubuntu/boot/generic.readme"
+                            />
+            </sdx:bootImages>
+            <sdx:processorGroup sdx:name="ubuntu"
+                                sdx:displayName="ubuntu"
+                                sdx:cpuType="cortex-a53">
+                <sdx:os sdx:name="linux"
+                        sdx:displayName="linux"
+                />
+            </sdx:processorGroup>
+        </sdx:configuration>
+    </sdx:systemConfigurations>
+</sdx:platform>

@@ -6,22 +6,27 @@
 # Copyright (c) 2015 Xilinx, Inc.
 #
 
-set pfm [sdsoc::create_pfm pynq_bare.hpfm]
-sdsoc::pfm_name        $pfm "xilinx.com" "xd" "pynq_bare" "1.0"
-sdsoc::pfm_description $pfm "Pynq"
 
-sdsoc::pfm_clock       $pfm FCLK_CLK0 ps7 0 true proc_sys_reset_0
+set_property PFM_NAME "xilinx.com:xd:pynq_bare:1.0" [get_files pynq_bare.bd]
 
-sdsoc::pfm_axi_port    $pfm M_AXI_GP0 ps7 M_AXI_GP
-sdsoc::pfm_axi_port    $pfm M_AXI_GP1 ps7 M_AXI_GP
-sdsoc::pfm_axi_port    $pfm S_AXI_ACP ps7 S_AXI_ACP
-sdsoc::pfm_axi_port    $pfm S_AXI_HP0 ps7 S_AXI_HP
-sdsoc::pfm_axi_port    $pfm S_AXI_HP1 ps7 S_AXI_HP
-sdsoc::pfm_axi_port    $pfm S_AXI_HP2 ps7 S_AXI_HP
-sdsoc::pfm_axi_port    $pfm S_AXI_HP3 ps7 S_AXI_HP
+set_property PFM.CLOCK { \
+    FCLK_CLK0 {id "0" is_default "true" proc_sys_reset "proc_sys_reset_0"} \
+} [get_bd_cells /ps7]
 
+set_property PFM.AXI_PORT { \
+    M_AXI_GP0 {memport "M_AXI_GP"} \
+    M_AXI_GP1 {memport "M_AXI_GP"} \
+    S_AXI_ACP {memport "S_AXI_ACP" sptag "ACP" memory "ps7 ACP_DDR_LOWOCM"} \
+    S_AXI_HP0 {memport "S_AXI_HP" sptag "HP0" memory "ps7 HP0_DDR_LOWOCM"} \
+    S_AXI_HP1 {memport "S_AXI_HP" sptag "HP1" memory "ps7 HP1_DDR_LOWOCM"} \
+    S_AXI_HP2 {memport "S_AXI_HP" sptag "HP2" memory "ps7 HP2_DDR_LOWOCM"} \
+    S_AXI_HP3 {memport "S_AXI_HP" sptag "HP3" memory "ps7 HP3_DDR_LOWOCM"} \
+} [get_bd_cells /ps7]
+
+set intVar []
 for {set i 1} {$i < 16} {incr i} {
-  sdsoc::pfm_irq       $pfm In$i xlconcat_0
+    lappend intVar In$i {}
 }
-sdsoc::generate_hw_pfm $pfm
+set_property PFM.IRQ $intVar [get_bd_cells /xlconcat_0]
 
+write_dsa -force ./pynq_bare.dsa
