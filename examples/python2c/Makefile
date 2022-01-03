@@ -10,7 +10,7 @@ all:
 
 #execute python testbench
 test-py:
-	python3.6 test.py
+	python3 test.py
 
 #execute C testbench
 test-c:

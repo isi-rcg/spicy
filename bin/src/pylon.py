@@ -84,6 +84,7 @@ def generate(funcDecl,source,header,mod):
         code += '   ' + arg.getPtr() + ';\n'
         if arg.category == 'array':
             code += '   PyArrayObject* ' + arg.name + '_obj = NULL;\n'
+    code += '   char* xclbinFilename = NULL;\n' # need to get the path to the xclbin filename
 
     #declare return variable (if needed)
     if ret_type.primitive != 'void':
@@ -102,6 +103,8 @@ def generate(funcDecl,source,header,mod):
         else:
             print('Error! Unknown ArgType category in pyces.py: %s' % arg.category)
             sys.exit(1)
+    arg_str += ', &xclbinFilename' 
+    type_str += 's' # the type string for the xclbin filename
     type_str += '"'
     code += type_str + arg_str + ');\n'
     code += '\n'
@@ -127,7 +130,7 @@ def generate(funcDecl,source,header,mod):
             code += ','
         code += '%s' % arg.name
         cnt += 1
-    code += ');\n'
+    code += ',xclbinFilename);\n'
     code += '\n'
     #process array args
     for arg in args:
@@ -164,34 +167,38 @@ def generate(funcDecl,source,header,mod):
     code += '   import_array();\n'
     code += '   return retval;\n'
     code += '}\n'
-
-    #generate c/python setup script
-    wrapper = 'import os\n'
-    wrapper += 'import numpy\n'
-    wrapper += 'from distutils.core import setup, Extension\n'
-    wrapper += 'cur = os.path.dirname(os.path.realpath(__file__))\n'
-
-    if debug:
-        wrapper += 'c_module = Extension("%s", sources=["spyc_dbg.cpp","wrapper.cpp","caller.cpp","%s"],include_dirs=[cur,numpy.get_include()])' % (mod,source)
-    else:
-        wrapper += 'c_module = Extension("%s", sources=["spyc.cpp","wrapper.cpp","caller.cpp","%s"],include_dirs=[cur,numpy.get_include()])' % (mod,source)
-    wrapper += '\n'
-    wrapper += 'setup(ext_modules=[%s])\n' % (mod)
     
+    if simulate:
+        #generate c/python setup script
+        wrapper = 'import os\n'
+        wrapper += 'import numpy\n'
+        wrapper += 'from distutils.core import setup, Extension\n'
+        wrapper += 'cur = os.path.dirname(os.path.realpath(__file__))\n'
+
+        if debug:
+            wrapper += 'c_module = Extension("%s", sources=["spyc_dbg.cpp","wrapper.cpp","caller.cpp","%s"],include_dirs=[cur,numpy.get_include()])' % (mod,source)
+        else:
+            wrapper += 'c_module = Extension("%s", sources=["spyc.cpp","wrapper.cpp","caller.cpp","%s"],include_dirs=[cur,numpy.get_include()])' % (mod,source)
+        wrapper += '\n'
+        wrapper += 'setup(ext_modules=[%s])\n' % (mod)
+        
+        if verbose:
+            print ("---Python Setup---------------------")
+            print(wrapper)
+        
+        fp = open('setup_sw.py','w')
+        fp.write(wrapper)
+        fp.close()
+
     if verbose:
         print ("---Python Wrapper-------------------")
         print(code)
-        print ("---Python Setup---------------------")
-        print(wrapper)
-
+    
     #write out code to files
     fp = open('wrapper.cpp','w')
     fp.write(code)
     fp.close()
 
-    fp = open('setup_sw.py','w')
-    fp.write(wrapper)
-    fp.close()
 
 ######################
 # generate
@@ -305,8 +312,9 @@ parser.add_argument('-debug',action='store_true',help='use debug library')
 parser.add_argument('-o',metavar='<code.cpp>',help='output c code file')
 parser.add_argument('-func',metavar='<name>',help='only process this function')
 parser.add_argument('-source',metavar='<file.cpp>',help='c source file containing function definition',required=True)
-parser.add_argument('-header',metavar='<file.h>',help='c header file to include',required=True)
+parser.add_argument('-header',metavar='<file.h>',help='c header file to include')
 parser.add_argument('-mod',metavar='<name>',help='module name')
+parser.add_argument('-simulate',action='store_true',help='generate scripts to build software executable')
 parser.add_argument('file_py',help='file containing python function to generate a wrapper for')
 
 args = parser.parse_args()
@@ -314,6 +322,7 @@ args = parser.parse_args()
 #process arguments
 verbose = args.verbose
 debug = args.debug
+simulate = args.simulate
 
 if args.o:
     outfile = args.o
@@ -422,30 +431,33 @@ else:
     wrap += '   import_array();\n'
     wrap += '   return retval;\n'
     wrap += '}\n'
-
-    #generate c/python setup script
-    wrapper = 'import os\n'
-    wrapper += 'import numpy\n'
-    wrapper += 'from distutils.core import setup, Extension\n'
-    wrapper += 'cur = os.path.dirname(os.path.realpath(__file__))\n'
-    wrapper += 'c_module = Extension("%s", sources=["spyc.cpp","wrapper.cpp","caller.cpp","%s"],include_dirs=[cur,numpy.get_include()])' % (mod,source)
-    wrapper += '\n'
-    wrapper += 'setup(ext_modules=[%s])\n' % (mod)
     
+    if simulate:
+        #generate c/python setup script
+        wrapper = 'import os\n'
+        wrapper += 'import numpy\n'
+        wrapper += 'from distutils.core import setup, Extension\n'
+        wrapper += 'cur = os.path.dirname(os.path.realpath(__file__))\n'
+        wrapper += 'c_module = Extension("%s", sources=["spyc.cpp","wrapper.cpp","caller.cpp","%s"],include_dirs=[cur,numpy.get_include()])' % (mod,source)
+        wrapper += '\n'
+        wrapper += 'setup(ext_modules=[%s])\n' % (mod)
+        if verbose:
+            print ("---Python Setup---------------------")
+            print(wrapper)
+    
+        fp = open('setup_sw.py','w')
+        fp.write(wrapper)
+        fp.close()
+
     if verbose:
         print ("---Python Wrapper-------------------")
         print(wrap)
-        print ("---Python Setup---------------------")
-        print(wrapper)
 
     #write out code to files
     fp = open('wrapper.cpp','w')
     fp.write(wrap)
     fp.close()
 
-    fp = open('setup_sw.py','w')
-    fp.write(wrapper)
-    fp.close()
 
 if debug:
     shutil.copyfile(lib_dbg_c,os.path.os.path.basename(lib_dbg_c))

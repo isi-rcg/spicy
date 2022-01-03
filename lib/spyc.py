@@ -49,8 +49,13 @@
 #
 #############################################################################################
 
+import os
 import pynq
 import numpy as np
+
+#load accelerator library
+libcaller = os.path.abspath('./libcaller.so')
+pynq.xlnk.Xlnk.set_allocator_library(libcaller)
 
 #create contiguous memory manager
 memmanager = pynq.xlnk.Xlnk()
