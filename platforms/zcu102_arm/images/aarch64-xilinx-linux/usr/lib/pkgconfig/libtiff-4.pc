@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: libtiff
+Description:  Tag Image File Format (TIFF) library.
+Version: 4.0.10
+Libs: -L${libdir} -ltiff
+Libs.private: -llzma -ljpeg -lz -lm 
+Cflags: -I${includedir}

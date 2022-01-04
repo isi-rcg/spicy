@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+# -*- python -*-
+#
+# gtk-doc - GTK DocBook documentation generator.
+# Copyright (C) 1998  Damon Chaplin
+#               2007-2016  Stefan Sauer
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+
+import argparse
+import os
+import sys
+sys.path.append('/usr/share/gtk-doc/python')
+
+from gtkdoc import common, config, scangobj
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='gtkdoc-rebase version %s - introspect g-objects' % config.version)
+    parser.add_argument('--version', action='version', version=config.version)
+    parser.add_argument('--module', required=True,
+                        help='Name of the doc module being parsed')
+    parser.add_argument('--types', default='',
+                        help='The name of the file to store the types in')
+    parser.add_argument('--type-init-func', default='',
+                        help='The init function(s) to call instead of g_type_init()')
+    parser.add_argument('--query-child-properties', default='',
+                        help='A function that returns a list of child properties for a class')
+    parser.add_argument('--output-dir', default='.',
+                        help='The directory where the results are stored')
+    parser.add_argument('--cc', default='', help='The compiler to use')
+    parser.add_argument('--ld', default='', help='The linker to use')
+    parser.add_argument('--cflags', type=str, default=[], help='Compiler flags',
+                        action='append')
+    parser.add_argument('--ldflags', type=str, default=[], help='Linker flags',
+                        action='append')
+    parser.add_argument('--run', default='',
+                        help='Command for running the scanner')
+    parser.add_argument('--verbose', action='store_true', default=False,
+                        help='Print extra output while processing')
+
+    options = parser.parse_args()
+
+    if options.types == '':
+        options.types = os.path.join(options.output_dir, options.module + '.types')
+    if options.cflags:
+        options.cflags = ' '.join(options.cflags)
+    if options.ldflags:
+        options.ldflags = ' '.join(options.ldflags)
+
+    if not options.cc:
+        options.cc = os.environ.get('CC', 'gcc')
+    if not options.ld:
+        options.ld = os.environ.get('LD', options.cc)
+    if not options.cflags:
+        options.cflags = os.environ.get('CFLAGS', '')
+    if not options.ldflags:
+        options.ldflags = os.environ.get('LDFLAGS', '')
+    if not options.run:
+        options.run = os.environ.get('RUN', '')
+
+    common.setup_logging()
+
+    sys.exit(scangobj.run(options))

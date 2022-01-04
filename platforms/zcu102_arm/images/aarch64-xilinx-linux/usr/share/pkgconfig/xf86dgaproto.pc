@@ -1,0 +1,8 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+ 
+Name: XF86DGAProto
+Description: XF86DGA extension headers
+Version: 2.1
+Cflags: -I${includedir}

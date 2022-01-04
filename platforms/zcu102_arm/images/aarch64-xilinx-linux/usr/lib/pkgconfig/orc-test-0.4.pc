@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include/orc-0.4
+
+Name: orc-test-0.4
+Description: Test Library of Optimized Inner Loops Runtime Compiler
+Version: 0.4.29
+Requires: orc-0.4
+Libs: -L${libdir} -lorc-test-0.4
+Libs.private: -lm -lrt -lpthread
+Cflags: -I${includedir}

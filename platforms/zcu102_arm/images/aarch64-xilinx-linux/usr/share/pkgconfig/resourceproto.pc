@@ -1,0 +1,8 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+ 
+Name: ResourceProto
+Description: Resource extension headers
+Version: 1.2.0
+Cflags: -I${includedir}

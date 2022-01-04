@@ -1,0 +1,8 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+ 
+Name: DRI2Proto
+Description: DRI2 extension headers
+Version: 2.8
+Cflags: -I${includedir}

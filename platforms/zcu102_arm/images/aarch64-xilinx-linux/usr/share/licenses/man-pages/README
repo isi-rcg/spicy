@@ -1,0 +1,37 @@
+This package contains Linux man pages for sections 1 through 8.  Some
+more information is given in the 'man-pages-x.y.Announce' file.
+
+Installing and uninstalling
+===========================
+"make install" will copy these man pages to /usr/share/man/man[1-8].
+
+To install to a path different from /usr, use
+"make install prefix=/install/path".
+
+"make remove" or "make uninstall" will remove any man page in this
+distribution from its destination.  Use with caution, and remember to
+use "prefix" if desired, as with the "install" target.
+
+"make" or "make all" will perform "make uninstall" followed by "make
+install".
+
+Man page overlap and duplication
+================================
+Note that sometimes these pages are duplicates of pages also distributed
+in other packages.  This has been reported about:
+
+man page                also found in
+-------------------------------------
+resolver.3              bind-utils, bind9utils
+resolv.conf.5           "
+passwd.5                shadow, passwd
+mailaddr.7              ?
+
+Copyrights
+==========
+See the 'man-pages-x.y.Announce' file.
+
+Homepage
+========
+For much more about the Linux man-pages project, see
+http://www.kernel.org/doc/man-pages/index.html.

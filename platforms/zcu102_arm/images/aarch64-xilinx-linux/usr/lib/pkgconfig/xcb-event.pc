@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: XCB Event library
+Description: XCB event callback interface
+Version: 0.4.0
+Requires: xcb
+Libs: -L${libdir} -lxcb-util
+Cflags: -I${includedir}

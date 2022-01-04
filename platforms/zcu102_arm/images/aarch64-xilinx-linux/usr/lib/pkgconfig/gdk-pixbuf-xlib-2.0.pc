@@ -1,0 +1,12 @@
+prefix=/usr
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: GdkPixbuf Xlib
+Description: GdkPixbuf rendering for Xlib
+Version: 2.38.2
+Requires: gdk-pixbuf-2.0
+Requires.private: gobject-2.0 >=  2.38.0, gmodule-no-export-2.0, gio-2.0 >=  2.38.0, shared-mime-info, x11
+Libs: -L${libdir} -lgdk_pixbuf_xlib-2.0
+Libs.private: -lm
+Cflags: -I${includedir}/gdk-pixbuf-2.0

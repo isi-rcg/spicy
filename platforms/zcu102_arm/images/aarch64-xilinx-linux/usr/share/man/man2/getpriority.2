@@ -1,0 +1,261 @@
+.\" Copyright (c) 1980, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %%%LICENSE_START(BSD_4_CLAUSE_UCB)
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\" %%%LICENSE_END
+.\"
+.\"     @(#)getpriority.2	6.9 (Berkeley) 3/10/91
+.\"
+.\" Modified 1993-07-24 by Rik Faith <faith@cs.unc.edu>
+.\" Modified 1996-07-01 by Andries Brouwer <aeb@cwi.nl>
+.\" Modified 1996-11-06 by Eric S. Raymond <esr@thyrsus.com>
+.\" Modified 2001-10-21 by Michael Kerrisk <mtk.manpages@gmail.com>
+.\"    Corrected statement under EPERM to clarify privileges required
+.\" Modified 2002-06-21 by Michael Kerrisk <mtk.manpages@gmail.com>
+.\"    Clarified meaning of 0 value for 'who' argument
+.\" Modified 2004-05-27 by Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.TH GETPRIORITY 2 2017-09-15 "Linux" "Linux Programmer's Manual"
+.SH NAME
+getpriority, setpriority \- get/set program scheduling priority
+.SH SYNOPSIS
+.B #include <sys/time.h>
+.br
+.B #include <sys/resource.h>
+.PP
+.BI "int getpriority(int " which ", id_t " who );
+.br
+.BI "int setpriority(int " which ", id_t " who ", int " prio );
+.SH DESCRIPTION
+The scheduling priority of the process, process group, or user, as
+indicated by
+.I which
+and
+.I who
+is obtained with the
+.BR getpriority ()
+call and set with the
+.BR setpriority ()
+call.
+The process attribute dealt with by these system calls is
+the same attribute (also known as the "nice" value) that is dealt with by
+.BR nice (2).
+.PP
+The value
+.I which
+is one of
+.BR PRIO_PROCESS ,
+.BR PRIO_PGRP ,
+or
+.BR PRIO_USER ,
+and
+.I who
+is interpreted relative to
+.I which
+(a process identifier for
+.BR PRIO_PROCESS ,
+process group
+identifier for
+.BR PRIO_PGRP ,
+and a user ID for
+.BR PRIO_USER ).
+A zero value for
+.I who
+denotes (respectively) the calling process, the process group of the
+calling process, or the real user ID of the calling process.
+.PP
+The
+.I prio
+argument is a value in the range \-20 to 19 (but see NOTES below).
+with \-20 being the highest priority and 19 being the lowest priority.
+Attempts to set a priority outside this range
+are silently clamped to the range.
+The default priority is 0;
+lower values give a process a higher scheduling priority.
+.PP
+The
+.BR getpriority ()
+call returns the highest priority (lowest numerical value)
+enjoyed by any of the specified processes.
+The
+.BR setpriority ()
+call sets the priorities of all of the specified processes
+to the specified value.
+.PP
+Traditionally, only a privileged process could lower the nice value
+(i.e., set a higher priority).
+However, since Linux 2.6.12, an unprivileged process can decrease
+the nice value of a target process that has a suitable
+.BR RLIMIT_NICE
+soft limit; see
+.BR getrlimit (2)
+for details.
+.SH RETURN VALUE
+On success,
+.BR getpriority ()
+returns the calling thread's nice value, which may be a negative number.
+On error, it returns \-1 and sets
+.I errno
+to indicate the cause of the error.
+Since a successful call to
+.BR getpriority ()
+can legitimately return the value \-1, it is necessary
+to clear the external variable
+.I errno
+prior to the
+call, then check it afterward to determine
+if \-1 is an error or a legitimate value.
+.PP
+.BR setpriority ()
+returns 0 on success.
+On error, it returns \-1 and sets
+.I errno
+to indicate the cause of the error.
+.SH ERRORS
+.TP
+.B EINVAL
+.I which
+was not one of
+.BR PRIO_PROCESS ,
+.BR PRIO_PGRP ,
+or
+.BR PRIO_USER .
+.TP
+.B ESRCH
+No process was located using the
+.I which
+and
+.I who
+values specified.
+.PP
+In addition to the errors indicated above,
+.BR setpriority ()
+may fail if:
+.TP
+.B EACCES
+The caller attempted to set a lower nice value
+(i.e., a higher process priority), but did not
+have the required privilege (on Linux: did not have the
+.B CAP_SYS_NICE
+capability).
+.TP
+.B EPERM
+A process was located, but its effective user ID did not match
+either the effective or the real user ID of the caller,
+and was not privileged (on Linux: did not have the
+.B CAP_SYS_NICE
+capability).
+But see NOTES below.
+.SH CONFORMING TO
+POSIX.1-2001, POSIX.1-2008,
+SVr4, 4.4BSD (these interfaces first appeared in 4.2BSD).
+.SH NOTES
+For further details on the nice value, see
+.BR sched (7).
+.PP
+.IR Note :
+the addition of the "autogroup" feature in Linux 2.6.38 means that
+the nice value no longer has its traditional effect in many circumstances.
+For details, see
+.BR sched (7).
+.PP
+A child created by
+.BR fork (2)
+inherits its parent's nice value.
+The nice value is preserved across
+.BR execve (2).
+.PP
+The details on the condition for
+.B EPERM
+depend on the system.
+The above description is what POSIX.1-2001 says, and seems to be followed on
+all System\ V-like systems.
+Linux kernels before 2.6.12 required the real or
+effective user ID of the caller to match
+the real user of the process \fIwho\fP (instead of its effective user ID).
+Linux 2.6.12 and later require
+the effective user ID of the caller to match
+the real or effective user ID of the process \fIwho\fP.
+All BSD-like systems (SunOS 4.1.3, Ultrix 4.2,
+4.3BSD, FreeBSD 4.3, OpenBSD-2.5, ...) behave in the same
+manner as Linux 2.6.12 and later.
+.PP
+Including
+.I <sys/time.h>
+is not required these days, but increases portability.
+(Indeed,
+.I <sys/resource.h>
+defines the
+.I rusage
+structure with fields of type
+.I struct timeval
+defined in
+.IR <sys/time.h> .)
+.\"
+.SS C library/kernel differences
+Within the kernel, nice values are actually represented
+using the range 40..1
+(since negative numbers are error codes) and these are the values
+employed by the
+.BR setpriority ()
+and
+.BR getpriority ()
+system calls.
+The glibc wrapper functions for these system calls handle the
+translations between the user-land and kernel representations
+of the nice value according to the formula
+.IR "unice\ =\ 20\ \-\ knice" .
+(Thus, the kernel's 40..1 range corresponds to the
+range \-20..19 as seen by user space.)
+.SH BUGS
+According to POSIX, the nice value is a per-process setting.
+However, under the current Linux/NPTL implementation of POSIX threads,
+the nice value is a per-thread attribute:
+different threads in the same process can have different nice values.
+Portable applications should avoid relying on the Linux behavior,
+which may be made standards conformant in the future.
+.SH SEE ALSO
+.BR nice (1),
+.BR renice (1),
+.BR fork (2),
+.BR capabilities (7),
+.BR sched (7)
+.PP
+.I Documentation/scheduler/sched-nice-design.txt
+in the Linux kernel source tree (since Linux 2.6.23)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

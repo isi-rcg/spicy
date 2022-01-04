@@ -1,0 +1,15 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+VERSION=2.5.17
+driverdir=${libdir}/libgphoto2/2.5.17
+
+Name: libgphoto2
+Description: Library for easy access to digital cameras
+URL: http://gphoto.org/proj/libgphoto2/
+Version: 2.5.17
+Requires: libgphoto2_port >= 0.10.0
+Requires.private: libexif >= 0.6.13
+Libs: -L${libdir} -lgphoto2 -lm
+Cflags: -I${includedir}/gphoto2

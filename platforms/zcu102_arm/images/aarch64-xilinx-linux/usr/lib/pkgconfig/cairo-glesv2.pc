@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: cairo-glesv2
+Description: OpenGLESv2 surface backend for cairo graphics library
+Version: 1.16.0
+
+Requires: cairo glesv2
+Libs:  
+Cflags: -I${includedir}/cairo 

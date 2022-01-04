@@ -1,0 +1,52 @@
+#!/scratch/jenkins-BUILDS-eSDK-2020.2.2_SOM_stable-pipeline-build-128_Ultra96Full/build/tmp/hosttools/python3
+# -*- python; coding: utf-8 -*-
+#
+# gtk-doc - GTK DocBook documentation generator.
+# Copyright (C) 2018  Stefan Sauer
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+
+import argparse
+import sys
+sys.path.append('/usr/share/gtk-doc/python')
+
+from gtkdoc import common, config, mkhtml2
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='gtkdoc-mkhtml version %s - generate documentation in html format' % config.version)
+    parser.add_argument('--version', action='version', version=config.version)
+    parser.add_argument('--path', default=[], action='append',
+                        help='Extra source directories')
+    parser.add_argument('--extra-dir', default=[], action='append',
+                        help='Directories to recursively scan for indices (*.devhelp2)'
+                        'in addition to HTML_DIR')
+    parser.add_argument('--src-lang', default='c',
+                        help='Programing language used for syntax highlighting. This'
+                        'can be any language pygments supports.')
+    parser.add_argument('args', nargs='*',
+                        help='MODULE DRIVER_FILE')
+    # TODO: only for testing, replace with env-var
+    parser.add_argument('--uninstalled', action='store_true', default=False,
+                        help='???')
+
+    options = parser.parse_args()
+    if len(options.args) != 2:
+        sys.exit('Too few arguments')
+
+    common.setup_logging()
+
+    sys.exit(mkhtml2.run(options))

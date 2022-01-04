@@ -1,0 +1,167 @@
+.\" Copyright (C) 2001 Andries Brouwer <aeb@cwi.nl>
+.\" and Copyright (C) 2016 Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.TH STRVERSCMP 3  2019-03-06 "GNU" "Linux Programmer's Manual"
+.SH NAME
+strverscmp \- compare two version strings
+.SH SYNOPSIS
+.nf
+.BR "#define _GNU_SOURCE" "         /* See feature_test_macros(7) */"
+.B #include <string.h>
+.PP
+.BI "int strverscmp(const char *" s1 ", const char *" s2 );
+.fi
+.SH DESCRIPTION
+Often one has files
+.IR jan1 ", " jan2 ", ..., " jan9 ", " jan10 ", ..."
+and it feels wrong when
+.BR ls (1)
+orders them
+.IR jan1 ", " jan10 ", ..., " jan2 ", ..., " jan9 .
+.\" classical solution: "rename jan jan0 jan?"
+In order to rectify this, GNU introduced the
+.I \-v
+option to
+.BR ls (1),
+which is implemented using
+.BR versionsort (3),
+which again uses
+.BR strverscmp ().
+.PP
+Thus, the task of
+.BR strverscmp ()
+is to compare two strings and find the "right" order, while
+.BR strcmp (3)
+finds only the lexicographic order.
+This function does not use
+the locale category
+.BR LC_COLLATE ,
+so is meant mostly for situations
+where the strings are expected to be in ASCII.
+.PP
+What this function does is the following.
+If both strings are equal, return 0.
+Otherwise, find the position
+between two bytes with the property that before it both strings are equal,
+while directly after it there is a difference.
+Find the largest consecutive digit strings containing (or starting at,
+or ending at) this position.
+If one or both of these is empty,
+then return what
+.BR strcmp (3)
+would have returned (numerical ordering of byte values).
+Otherwise, compare both digit strings numerically, where digit strings with
+one or more leading zeros are interpreted as if they have a decimal point
+in front (so that in particular digit strings with more leading zeros
+come before digit strings with fewer leading zeros).
+Thus, the ordering is
+.IR 000 ", " 00 ", " 01 ", " 010 ", " 09 ", " 0 ", " 1 ", " 9 ", " 10 .
+.SH RETURN VALUE
+The
+.BR strverscmp ()
+function returns an integer
+less than, equal to, or greater than zero if
+.I s1
+is found, respectively, to be earlier than, equal to,
+or later than
+.IR s2 .
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lb lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR strverscmp ()
+T}	Thread safety	MT-Safe
+.TE
+.\" FIXME: The marking is different from that in the glibc manual,
+.\" which has:
+.\"
+.\"     strverscmp: MT-Safe locale
+.\"
+.\" glibc manual says strverscmp should have marking locale because it calls
+.\" isdigit() multiple times and isdigit() uses locale variable.
+.\" But isdigit() has two implementations. With different compiling conditions,
+.\" we may call isdigit() in macro, then strverscmp() should not have locale
+.\" problem.
+.SH CONFORMING TO
+This function is a GNU extension.
+.SH EXAMPLE
+The program below can be used to demonstrate the behavior of
+.BR strverscmp ().
+It uses
+.BR strverscmp ()
+to compare the two strings given as its command-line arguments.
+An example of its use is the following:
+.PP
+.in +4n
+.EX
+$ \fB./a.out jan1 jan10\fP
+jan1 < jan10
+.EE
+.in
+.SS Program source
+\&
+.EX
+#define _GNU_SOURCE
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int
+main(int argc, char *argv[])
+{
+    int res;
+
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s <string1> <string2>\en", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    res = strverscmp(argv[1], argv[2]);
+
+    printf("%s %s %s\en", argv[1],
+            (res < 0) ? "<" : (res == 0) ? "==" : ">", argv[2]);
+
+    exit(EXIT_SUCCESS);
+}
+.EE
+.SH SEE ALSO
+.BR rename (1),
+.BR strcasecmp (3),
+.BR strcmp (3),
+.BR strcoll (3)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

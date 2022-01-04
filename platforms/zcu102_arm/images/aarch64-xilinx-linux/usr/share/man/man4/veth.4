@@ -1,0 +1,106 @@
+.\" Copyright (c) 2012 Tomáš Pospíšek (tpo_deb@sourcepole.ch),
+.\"     Fri, 03 Nov 2012 22:35:33 +0100
+.\" and Copyright (c) 2012 Eric W. Biederman <ebiederm@xmission.com>
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, write to the Free
+.\" Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111,
+.\" USA.
+.\" %%%LICENSE_END
+.\"
+.\"
+.TH veth 4 2018-02-02 "Linux" "Linux Programmer's Manual"
+.SH NAME
+veth \- Virtual Ethernet Device
+.SH DESCRIPTION
+The
+.B veth
+devices are virtual Ethernet devices.
+They can act as tunnels between network namespaces to create
+a bridge to a physical network device in another namespace,
+but can also be used as standalone network devices.
+.PP
+.B veth
+devices are always created in interconnected pairs.
+A pair can be created using the command:
+.PP
+.in +4n
+.EX
+# ip link add <p1-name> type veth peer name <p2-name>
+.EE
+.in
+.PP
+In the above,
+.I p1-name
+and
+.I p2-name
+are the names assigned to the two connected end points.
+.PP
+Packets transmitted on one device in the pair are immediately received on
+the other device.
+When either devices is down the link state of the pair is down.
+.PP
+.B veth
+device pairs are useful for combining the network
+facilities of the kernel together in interesting ways.
+A particularly interesting use case is to place one end of a
+.B veth
+pair in one network namespace and the other end in another network namespace,
+thus allowing communication between network namespaces.
+To do this, one first creates the
+.B veth
+device as above and then moves one side of the pair to the other namespace:
+.PP
+.in +4n
+.EX
+# ip link set <p2-name> netns <p2-namespace>
+.EE
+.in
+.PP
+.BR ethtool (8)
+can be used to find the peer of a
+.B veth
+network interface, using commands something like:
+.PP
+.in +4n
+.EX
+# \fBip link add ve_A type veth peer name ve_B\fP   # Create veth pair
+# \fBethtool -S ve_A\fP         # Discover interface index of peer
+NIC statistics:
+     peer_ifindex: 16
+# \fBip link | grep '^16:'\fP   # Look up interface
+16: ve_B@ve_A: <BROADCAST,MULTICAST,M-DOWN> mtu 1500 qdisc ...
+.EE
+.in
+.PP
+.SH "SEE ALSO"
+.BR clone (2),
+.BR network_namespaces (7),
+.BR ip (8),
+.BR ip-link (8),
+.BR ip-netns (8)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

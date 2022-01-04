@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+# -*- python -*-
+#
+# gtk-doc - GTK DocBook documentation generator.
+# Copyright (C) 1998  Damon Chaplin
+#               2007-2016  Stefan Sauer
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+
+import argparse
+import os
+import sys
+sys.path.append('/usr/share/gtk-doc/python')
+
+from gtkdoc import common, config, fixxref
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='gtkdoc-fixxref version %s - fix cross references in html files' % config.version)
+    parser.add_argument('--version', action='version', version=config.version)
+    parser.add_argument('--module', required=True,
+                        help='Name of the doc module being processed.')
+    parser.add_argument('--module-dir', default='',
+                        help='The directory which contains the generated HTML.')
+    parser.add_argument('--html-dir', default='',
+                        help='The directory where gtk-doc generated documentation is'
+                       'installed.')
+    parser.add_argument('--extra-dir', default=[], action='append',
+                        help='Directories to recursively scan for indices (*.devhelp2)'
+                        'in addition to HTML_DIR')
+    parser.add_argument('--src-lang', default='c',
+                        help='Programing language used for syntax highlighting. The'
+                        'available languages depend on the source'
+                        'highlighter you use.')
+
+    options = parser.parse_args()
+
+    if not options.module_dir:
+        options.module_dir = os.path.join(options.html_dir, options.module)
+
+    common.setup_logging()
+
+    fixxref.Run(options)

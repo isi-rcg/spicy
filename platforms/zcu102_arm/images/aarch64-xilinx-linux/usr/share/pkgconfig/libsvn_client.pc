@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: libsvn_client
+Description: Subversion Client Library
+Version: 1.12.2
+Requires:  apr-1
+Requires.private:  libsvn_wc libsvn_ra libsvn_delta libsvn_diff libsvn_subr
+Libs: -L${libdir}  -lsvn_client
+Cflags: -I${includedir}

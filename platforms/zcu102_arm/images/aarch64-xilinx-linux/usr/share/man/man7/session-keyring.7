@@ -1,0 +1,125 @@
+.\"
+.\" Copyright (C) 2014 Red Hat, Inc. All Rights Reserved.
+.\" Written by David Howells (dhowells@redhat.com)
+.\"
+.\" %%%LICENSE_START(GPLv2+_SW_ONEPARA)
+.\" This program is free software; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License
+.\" as published by the Free Software Foundation; either version
+.\" 2 of the License, or (at your option) any later version.
+.\" %%%LICENSE_END
+.\"
+.TH "SESSION-KEYRING" 7 2017-09-15 Linux "Linux Programmer's Manual"
+.SH NAME
+session-keyring \- session shared process keyring
+.SH DESCRIPTION
+The session keyring is a keyring used to anchor keys on behalf of a process.
+It is typically created by
+.BR pam_keyinit (8)
+when a user logs in and a link will be added that refers to the
+.BR user-keyring (7).
+Optionally, PAM may revoke the session keyring on logout.
+(In typical configurations, PAM does do this revocation.)
+The session keyring has the name (description)
+.IR _ses .
+.PP
+A special serial number value,
+.BR KEY_SPEC_SESSION_KEYRING ,
+is defined that can be used in lieu of the actual serial number of
+the calling process's session keyring.
+.PP
+From the
+.BR keyctl (1)
+utility, '\fB@s\fP' can be used instead of a numeric key ID in
+much the same way.
+.PP
+A process's session keyring is inherited across
+.BR clone (2),
+.BR fork (2),
+and
+.BR vfork (2).
+The session keyring
+is preserved across
+.BR execve (2),
+even when the executable is set-user-ID or set-group-ID or has capabilities.
+The session keyring is destroyed when the last process that
+refers to it exits.
+.PP
+If a process doesn't have a session keyring when it is accessed, then,
+under certain circumstances, the
+.BR user-session-keyring (7)
+will be attached as the session keyring
+and under others a new session keyring will be created.
+(See
+.BR user-session-keyring (7)
+for further details.)
+.SS Special operations
+The
+.I keyutils
+library provides the following special operations for manipulating
+session keyrings:
+.TP
+.BR keyctl_join_session_keyring (3)
+This operation allows the caller to change the session keyring
+that it subscribes to.
+The caller can join an existing keyring with a specified name (description),
+create a new keyring with a given name,
+or ask the kernel to create a new "anonymous"
+session keyring with the name "_ses".
+(This function is an interface to the
+.BR keyctl (2)
+.B KEYCTL_JOIN_SESSION_KEYRING
+operation.)
+.TP
+.BR keyctl_session_to_parent (3)
+This operation allows the caller to make the parent process's
+session keyring to the same as its own.
+For this to succeed, the parent process must have
+identical security attributes and must be single threaded.
+(This function is an interface to the
+.BR keyctl (2)
+.B KEYCTL_SESSION_TO_PARENT
+operation.)
+.PP
+These operations are also exposed through the
+.BR keyctl (1)
+utility as:
+.PP
+.in +4n
+.EX
+keyctl session
+keyctl session - [<prog> <arg1> <arg2> ...]
+keyctl session <name> [<prog> <arg1> <arg2> ...]
+.EE
+.in
+.PP
+and:
+.PP
+.in +4n
+.EX
+keyctl new_session
+.EE
+.in
+.SH SEE ALSO
+.ad l
+.nh
+.BR keyctl (1),
+.BR keyctl (3),
+.BR keyctl_join_session_keyring (3),
+.BR keyctl_session_to_parent (3),
+.BR keyrings (7),
+.BR persistent\-keyring (7),
+.BR process\-keyring (7),
+.BR thread\-keyring (7),
+.BR user\-keyring (7),
+.BR user\-session\-keyring (7),
+.BR pam_keyinit (8)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

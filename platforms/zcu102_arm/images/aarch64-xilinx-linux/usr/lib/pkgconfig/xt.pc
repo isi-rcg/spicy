@@ -1,0 +1,15 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+appdefaultdir=/usr/share/X11/app-defaults
+datarootdir=${prefix}/share
+errordbdir=/usr/share/X11
+
+Name: Xt
+Description: X Toolkit Library
+Version: 1.2.0
+Requires: xproto x11
+Requires.private: ice sm
+Cflags: -I${includedir}
+Libs: -L${libdir} -lXt

@@ -1,0 +1,14 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+targets=x11 wayland
+
+gtk_binary_version=3.0.0
+gtk_host=aarch64-xilinx-linux-gnu
+
+Name: GTK+
+Description: GTK+ Unix print support
+Version: 3.24.8
+Requires: gtk+-3.0 atk >= 2.15.1 cairo >= 1.14.0 cairo-gobject >= 1.14.0 gdk-pixbuf-2.0 >= 2.30.0 gio-2.0 >= 2.53.4
+Cflags: -I${includedir}/gtk-3.0/unix-print

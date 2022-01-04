@@ -1,0 +1,10 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: libnewt
+Description: A development library for text mode user interfaces
+Version: 0.52.21
+Libs: -L${libdir} -lnewt
+Cflags: -I${includedir}

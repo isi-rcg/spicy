@@ -1,0 +1,31 @@
+# GdkPixbuf Image Loader Modules file
+# Automatically generated file, do not edit
+# Created by gdk-pixbuf-query-loaders from gdk-pixbuf-2.38.2
+#
+# LoaderDir = /usr/lib/gdk-pixbuf-2.0/2.10.0/loaders
+#
+"/usr/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-gif.so"
+"gif" 4 "gdk-pixbuf" "GIF" "LGPL"
+"image/gif" ""
+"gif" ""
+"GIF8" "" 100
+
+"/usr/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-jpeg.so"
+"jpeg" 5 "gdk-pixbuf" "JPEG" "LGPL"
+"image/jpeg" ""
+"jpeg" "jpe" "jpg" ""
+"\377\330" "" 100
+
+"/usr/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-png.so"
+"png" 5 "gdk-pixbuf" "PNG" "LGPL"
+"image/png" ""
+"png" ""
+"\211PNG\r\n\032\n" "" 100
+
+"/usr/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-xpm.so"
+"xpm" 4 "gdk-pixbuf" "XPM" "LGPL"
+"image/x-xpixmap" ""
+"xpm" ""
+"/* XPM */" "" 100
+
+

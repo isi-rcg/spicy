@@ -1,0 +1,239 @@
+.\" Copyright (C) 2003 Free Software Foundation, Inc.
+.\" Copyright (C) 2015 Andrew Lutomirski
+.\" Author: Kent Yoder
+.\"
+.\" %%%LICENSE_START(GPL_NOVERSION_ONELINE)
+.\" This file is distributed according to the GNU General Public License.
+.\" %%%LICENSE_END
+.\"
+.TH SET_THREAD_AREA 2 2019-03-06 "Linux" "Linux Programmer's Manual"
+.SH NAME
+get_thread_area, set_thread_area \- manipulate thread-local storage information
+.SH SYNOPSIS
+.nf
+.B #include <linux/unistd.h>
+
+.B #if defined __i386__ || defined __x86_64__
+.B # include <asm/ldt.h>
+.PP
+.BI "int get_thread_area(struct user_desc *" u_info );
+.BI "int set_thread_area(struct user_desc *" u_info );
+.PP
+.B #elif defined __m68k__
+.PP
+.B "int get_thread_area(void);
+.BI "int set_thread_area(unsigned long " tp );
+.PP
+.B #elif defined __mips__
+.PP
+.BI "int set_thread_area(unsigned long " addr );
+.PP
+.B #endif
+.fi
+.PP
+.IR Note :
+There are no glibc wrappers for these system calls; see NOTES.
+.SH DESCRIPTION
+These calls provide architecture-specific support for a thread-local storage
+implementation.
+At the moment,
+.BR set_thread_area ()
+is available on m68k, MIPS, and x86 (both 32-bit and 64-bit variants);
+.BR get_thread_area ()
+is available on m68k and x86.
+.PP
+On m68k and MIPS,
+.BR set_thread_area ()
+allows storing an arbitrary pointer (provided in the
+.B tp
+argument on m68k and in the
+.B addr
+argument on MIPS)
+in the kernel data structure associated with the calling thread;
+this pointer can later be retrieved using
+.BR get_thread_area ()
+(see also NOTES
+for information regarding obtaining the thread pointer on MIPS).
+.PP
+On x86, Linux dedicates three global descriptor table (GDT) entries for
+thread-local storage.
+For more information about the GDT, see the
+Intel Software Developer's Manual or the AMD Architecture Programming Manual.
+.PP
+Both of these system calls take an argument that is a pointer
+to a structure of the following type:
+.PP
+.in +4n
+.EX
+struct user_desc {
+    unsigned int  entry_number;
+    unsigned long base_addr;
+    unsigned int  limit;
+    unsigned int  seg_32bit:1;
+    unsigned int  contents:2;
+    unsigned int  read_exec_only:1;
+    unsigned int  limit_in_pages:1;
+    unsigned int  seg_not_present:1;
+    unsigned int  useable:1;
+#ifdef __x86_64__
+    unsigned int  lm:1;
+#endif
+};
+.EE
+.in
+.PP
+.BR get_thread_area ()
+reads the GDT entry indicated by
+.I u_info\->entry_number
+and fills in the rest of the fields in
+.IR u_info .
+.PP
+.BR set_thread_area ()
+sets a TLS entry in the GDT.
+.PP
+The TLS array entry set by
+.BR set_thread_area ()
+corresponds to the value of
+.I u_info\->entry_number
+passed in by the user.
+If this value is in bounds,
+.BR set_thread_area ()
+writes the TLS descriptor pointed to by
+.I u_info
+into the thread's TLS array.
+.PP
+When
+.BR set_thread_area ()
+is passed an
+.I entry_number
+of \-1, it searches for a free TLS entry.
+If
+.BR set_thread_area ()
+finds a free TLS entry, the value of
+.I u_info\->entry_number
+is set upon return to show which entry was changed.
+.PP
+A
+.I user_desc
+is considered "empty" if
+.I read_exec_only
+and
+.I seg_not_present
+are set to 1 and all of the other fields are 0.
+If an "empty" descriptor is passed to
+.BR set_thread_area (),
+the corresponding TLS entry will be cleared.
+See BUGS for additional details.
+.PP
+Since Linux 3.19,
+.BR set_thread_area ()
+cannot be used to write non-present segments, 16-bit segments, or code
+segments, although clearing a segment is still acceptable.
+.SH RETURN VALUE
+On x86, these system calls
+return 0 on success, and \-1 on failure, with
+.I errno
+set appropriately.
+.PP
+On MIPS and m68k,
+.BR set_thread_area ()
+always returns 0.
+On m68k,
+.BR get_thread_area ()
+returns the thread area pointer value
+(previously set via
+.BR set_thread_area ()).
+.SH ERRORS
+.TP
+.B EFAULT
+\fIu_info\fP is an invalid pointer.
+.TP
+.B EINVAL
+\fIu_info\->entry_number\fP is out of bounds.
+.TP
+.B ENOSYS
+.BR get_thread_area ()
+or
+.BR set_thread_area ()
+was invoked as a 64-bit system call.
+.TP
+.B ESRCH
+.RB ( set_thread_area ())
+A free TLS entry could not be located.
+.SH VERSIONS
+.BR set_thread_area ()
+first appeared in Linux 2.5.29.
+.BR get_thread_area ()
+first appeared in Linux 2.5.32.
+.SH CONFORMING TO
+.BR set_thread_area ()
+and
+.BR get_thread_area ()
+are Linux-specific and should not be used in programs that are intended
+to be portable.
+.SH NOTES
+Glibc does not provide wrappers for these system calls,
+since they are generally intended for use only by threading libraries.
+In the unlikely event that you want to call them directly, use
+.BR syscall (2).
+.PP
+.BR arch_prctl (2)
+can interfere with
+.BR set_thread_area ()
+on x86.
+See
+.BR arch_prctl (2)
+for more details.
+This is not normally a problem, as
+.BR arch_prctl (2)
+is normally used only by 64-bit programs.
+.PP
+On MIPS, the current value of the thread area pointer can be obtained
+using the instruction:
+.PP
+.in +4n
+.EX
+rdhwr dest, $29
+.EE
+.in
+.PP
+This instruction traps and is handled by kernel.
+.SH BUGS
+On 64-bit kernels before Linux 3.19,
+.\" commit e30ab185c490e9a9381385529e0fd32f0a399495
+one of the padding bits in
+.IR user_desc ,
+if set, would prevent the descriptor from being considered empty (see
+.BR modify_ldt (2)).
+As a result, the only reliable way to clear a TLS entry is to use
+.BR memset (3)
+to zero the entire
+.I user_desc
+structure, including padding bits, and then to set the
+.I read_exec_only
+and
+.I seg_not_present
+bits.
+On Linux 3.19, a
+.I user_desc
+consisting entirely of zeros except for
+.I entry_number
+will also be interpreted as a request to clear a TLS entry, but this
+behaved differently on older kernels.
+.PP
+Prior to Linux 3.19, the DS and ES segment registers must not reference
+TLS entries.
+.SH SEE ALSO
+.BR arch_prctl (2),
+.BR modify_ldt (2),
+.BR ptrace (2)
+.RB ( PTRACE_GET_THREAD_AREA " and " PTRACE_SET_THREAD_AREA )
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

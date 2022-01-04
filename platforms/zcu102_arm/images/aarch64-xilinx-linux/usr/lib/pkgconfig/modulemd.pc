@@ -1,0 +1,10 @@
+prefix=/usr
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: modulemd
+Description: Module metadata manipulation library
+Version: 1.8.13
+Requires: glib-2.0, gobject-2.0
+Libs: -l:libmodulemd.so.1
+Cflags: -I${includedir}/modulemd

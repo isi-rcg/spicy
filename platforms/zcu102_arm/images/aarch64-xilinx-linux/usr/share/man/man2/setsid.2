@@ -1,0 +1,126 @@
+.\" Copyright Michael Haardt (michael@cantor.informatik.rwth-aachen.de)
+.\"     Sat Aug 27 20:43:50 MET DST 1994
+.\" and Copyright (C) 2014, Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.\" Modified Sun Sep 11 19:19:05 1994 <faith@cs.unc.edu>
+.\" Modified Mon Mar 25 10:19:00 1996 <aeb@cwi.nl> (merged a few
+.\"	tiny changes from a man page by Charles Livingston).
+.\" Modified Sun Jul 21 14:45:46 1996 <aeb@cwi.nl>
+.\"
+.TH SETSID 2 2017-09-15 "Linux" "Linux Programmer's Manual"
+.SH NAME
+setsid \- creates a session and sets the process group ID
+.SH SYNOPSIS
+.ad l
+.B #include <sys/types.h>
+.br
+.B #include <unistd.h>
+.PP
+.B pid_t setsid(void);
+.br
+.ad b
+.SH DESCRIPTION
+.BR setsid ()
+creates a new session if the calling process is not a
+process group leader.
+The calling process is the leader of the new session
+(i.e., its session ID is made the same as its process ID).
+The calling process also becomes
+the process group leader of a new process group in the session
+(i.e., its process group ID is made the same as its process ID).
+.PP
+The calling process will be the only process in
+the new process group and in the new session.
+.PP
+Initially, the new session has no controlling terminal.
+For details of how a session acquires a controlling terminal, see
+.BR credentials (7).
+.SH RETURN VALUE
+On success, the (new) session ID of the calling process is returned.
+On error,
+.I "(pid_t)\ \-1"
+is returned, and
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.TP
+.B EPERM
+The process group ID of any process equals the PID of the calling process.
+Thus, in particular,
+.BR setsid ()
+fails if the calling process is already a process group leader.
+.SH CONFORMING TO
+POSIX.1-2001, POSIX.1-2008, SVr4.
+.SH NOTES
+A child created via
+.BR fork (2)
+inherits its parent's session ID.
+The session ID is preserved across an
+.BR execve (2).
+.PP
+A process group leader is a process whose process group ID equals its PID.
+Disallowing a process group leader from calling
+.BR setsid ()
+prevents the possibility that a process group leader places itself
+in a new session while other processes in the process group remain
+in the original session;
+such a scenario would break the strict
+two-level hierarchy of sessions and process groups.
+In order to be sure that
+.BR setsid ()
+will succeed, call
+.BR fork (2)
+and have the parent
+.BR _exit (2),
+while the child (which by definition can't be a process group leader) calls
+.BR setsid ().
+.PP
+If a session has a controlling terminal, and the
+.B CLOCAL
+flag for that terminal is not set,
+and a terminal hangup occurs, then the session leader is sent a
+.BR SIGHUP
+signal.
+.PP
+If a process that is a session leader terminates, then a
+.B SIGHUP
+signal is sent to each process in the foreground
+process group of the controlling terminal.
+.SH SEE ALSO
+.BR setsid (1),
+.BR getsid (2),
+.BR setpgid (2),
+.BR setpgrp (2),
+.BR tcgetsid (3),
+.BR credentials (7),
+.BR sched (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

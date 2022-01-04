@@ -1,0 +1,9 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+
+Name: wayland-egl-backend
+Description: Backend wayland-egl interface
+Version: 3
+Libs:
+Cflags: -I${includedir}

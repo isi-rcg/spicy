@@ -1,0 +1,15 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+rpmhome=/usr/lib/rpm
+
+Name: RPM
+Description: RPM Package Manager
+Version: 4.14.2.1
+URL: http://rpm.org
+Requires.private:  
+# Conflicts:
+Cflags: -I${includedir}
+Libs: -L${libdir} -lrpm -lrpmio
+Libs.private: -lpopt -lrt -lpthread -llzma -ldb -lbz2 -lz  -lnss3 

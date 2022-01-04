@@ -1,0 +1,11 @@
+prefix=/usr
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: atspi
+Description: Accessibility Technology software library
+Version: 2.32.1
+Requires: dbus-1 glib-2.0
+Requires.private: dbus-1 >=  1.5, gobject-2.0 >=  2.0.0, glib-2.0 >=  2.32.0, x11, xtst, xi
+Libs: -L${libdir} -latspi
+Cflags: -I${includedir}/at-spi-2.0

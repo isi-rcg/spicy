@@ -1,0 +1,114 @@
+.\" Copyright (C) 2001 Andries Brouwer <aeb@cwi.nl>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.TH TIMEGM 3 2016-12-12 "GNU" "Linux Programmer's Manual"
+.SH NAME
+timegm, timelocal \- inverses of gmtime and localtime
+.SH SYNOPSIS
+.nf
+.B #include <time.h>
+.PP
+.BI "time_t timelocal(struct tm *" tm );
+.PP
+.BI "time_t timegm(struct tm *" tm );
+.PP
+.fi
+.in -4n
+Feature Test Macro Requirements for glibc (see
+.BR feature_test_macros (7)):
+.in
+.PP
+.BR timelocal (),
+.BR timegm ():
+    Since glibc 2.19:
+        _DEFAULT_SOURCE
+    Glibc 2.19 and earlier:
+        _BSD_SOURCE || _SVID_SOURCE
+.SH DESCRIPTION
+The functions
+.BR timelocal ()
+and
+.BR timegm ()
+are the inverses of
+.BR localtime (3)
+and
+.BR gmtime (3).
+Both functions take a broken-down time and convert it to calendar time
+(seconds since the Epoch, 1970-01-01 00:00:00 +0000, UTC).
+The difference between the two functions is that
+.BR timelocal ()
+takes the local timezone into account when doing the conversion, while
+.BR timegm ()
+takes the input value to be Coordinated Universal Time (UTC).
+.SH RETURN VALUE
+On success,
+these functions return the calendar time (seconds since the Epoch),
+expressed as a value of type
+.IR time_t .
+On error, they return the value
+.I (time_t)\ \-1
+and set
+.I errno
+to indicate the cause of the error.
+.SH ERRORS
+.TP
+.B EOVERFLOW
+The result cannot be represented.
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbw21 lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR timelocal (),
+.BR timegm ()
+T}	Thread safety	MT-Safe env locale
+.TE
+.SH CONFORMING TO
+These functions are nonstandard GNU extensions
+that are also present on the BSDs.
+Avoid their use.
+.SH NOTES
+The
+.BR timelocal ()
+function is equivalent to the POSIX standard function
+.BR mktime (3).
+There is no reason to ever use it.
+.SH SEE ALSO
+.BR gmtime (3),
+.BR localtime (3),
+.BR mktime (3),
+.BR tzset (3)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

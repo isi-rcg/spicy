@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: libsocketcan 
+Description: provides access to socketcan configuration interface
+Requires:
+Version: 0.0.11
+Libs: -L${libdir} -lsocketcan
+#Libs.private: -lm -lpthread ...etc...
+Cflags: -I${includedir}

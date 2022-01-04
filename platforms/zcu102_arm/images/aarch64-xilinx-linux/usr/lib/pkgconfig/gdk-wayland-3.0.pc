@@ -1,0 +1,13 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+targets=x11 wayland
+
+Name: GDK
+Description: GTK+ Drawing Kit
+Version: 3.24.8
+Requires: pango pangocairo gdk-pixbuf-2.0 >= 2.30.0 cairo >= 1.14.0 cairo-gobject >= 1.14.0
+Requires.private: gio-unix-2.0 >= 2.53.4 fontconfig x11 xext xi xrandr xcursor xfixes xcomposite xdamage wayland-client >= 1.9.91 wayland-protocols >= 1.12 xkbcommon >= 0.2.0 wayland-cursor >= 1.9.91 wayland-egl   cairo-xlib cairo epoxy >= 1.4  fribidi >= 0.19.7
+Libs: -L${libdir} -lgdk-3 
+Cflags: -I${includedir}/gtk-3.0 

@@ -1,0 +1,10 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: The atomic_ops library
+Description: Atomic memory update operations portable implementation
+Version: 7.6.10
+Libs: -L${libdir} -latomic_ops
+Cflags: -I${includedir}

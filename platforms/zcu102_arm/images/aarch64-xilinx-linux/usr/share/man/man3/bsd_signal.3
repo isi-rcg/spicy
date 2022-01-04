@@ -1,0 +1,135 @@
+.\" Copyright (c) 2007 Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.TH BSD_SIGNAL 3 2019-03-06 "" "Linux Programmer's Manual"
+.SH NAME
+bsd_signal \- signal handling with BSD semantics
+.SH SYNOPSIS
+.B #include <signal.h>
+.PP
+.B typedef void (*sighandler_t)(int);
+.PP
+.BI "sighandler_t bsd_signal(int " signum ", sighandler_t " handler );
+.PP
+.in -4n
+Feature Test Macro Requirements for glibc (see
+.BR feature_test_macros (7)):
+.in
+.PP
+.ad l
+.BR bsd_signal ():
+.RS 4
+Since glibc 2.26:
+    _XOPEN_SOURCE >= 500
+.\"    || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED
+        && ! (_POSIX_C_SOURCE\ >=\ 200809L)
+.br
+Glibc 2.25 and earlier:
+    _XOPEN_SOURCE
+.RE
+.ad b
+.SH DESCRIPTION
+The
+.BR bsd_signal ()
+function takes the same arguments, and performs the same task, as
+.BR signal (2).
+.PP
+The difference between the two is that
+.BR bsd_signal ()
+is guaranteed to provide reliable signal semantics, that is:
+a) the disposition of the signal is not reset to the default
+when the handler is invoked;
+b) delivery of further instances of the signal is blocked while
+the signal handler is executing; and
+c) if the handler interrupts a blocking system call,
+then the system call is automatically restarted.
+A portable application cannot rely on
+.BR signal (2)
+to provide these guarantees.
+.SH RETURN VALUE
+The
+.BR bsd_signal ()
+function returns the previous value of the signal handler, or
+.B SIG_ERR
+on error.
+.SH ERRORS
+As for
+.BR signal (2).
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lb lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR bsd_signal ()
+T}	Thread safety	MT-Safe
+.TE
+.SH CONFORMING TO
+4.2BSD, POSIX.1-2001.
+POSIX.1-2008 removes the specification of
+.BR bsd_signal (),
+recommending the use of
+.BR sigaction (2)
+instead.
+.SH NOTES
+Use of
+.BR bsd_signal ()
+should be avoided; use
+.BR sigaction (2)
+instead.
+.PP
+On modern Linux systems,
+.BR bsd_signal ()
+and
+.BR signal (2)
+are equivalent.
+But on older systems,
+.BR signal (2)
+provided unreliable signal semantics; see
+.BR signal (2)
+for details.
+.PP
+The use of
+.I sighandler_t
+is a GNU extension;
+this type is defined only if the
+.B _GNU_SOURCE
+feature test macro is defined.
+.SH SEE ALSO
+.BR sigaction (2),
+.BR signal (2),
+.BR sysv_signal (3),
+.BR signal (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

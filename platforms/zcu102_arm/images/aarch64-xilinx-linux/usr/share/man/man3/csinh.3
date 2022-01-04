@@ -1,0 +1,62 @@
+.\" Copyright 2002 Walter Harms (walter.harms@informatik.uni-oldenburg.de)
+.\"
+.\" %%%LICENSE_START(GPL_NOVERSION_ONELINE)
+.\" Distributed under GPL
+.\" %%%LICENSE_END
+.\"
+.TH CSINH 3 2017-09-15 "" "Linux Programmer's Manual"
+.SH NAME
+csinh, csinhf, csinhl \- complex hyperbolic sine
+.SH SYNOPSIS
+.B #include <complex.h>
+.PP
+.BI "double complex csinh(double complex " z ");"
+.br
+.BI "float complex csinhf(float complex " z ");"
+.br
+.BI "long double complex csinhl(long double complex " z ");"
+.PP
+Link with \fI\-lm\fP.
+.SH DESCRIPTION
+These functions calculate the complex hyperbolic sine of
+.IR z .
+.PP
+The complex hyperbolic sine function is defined as:
+.PP
+.nf
+    csinh(z) = (exp(z)\-exp(\-z))/2
+.fi
+.SH VERSIONS
+These functions first appeared in glibc in version 2.1.
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbw27 lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR csinh (),
+.BR csinhf (),
+.BR csinhl ()
+T}	Thread safety	MT-Safe
+.TE
+.sp 1
+.SH CONFORMING TO
+C99, POSIX.1-2001, POSIX.1-2008.
+.SH SEE ALSO
+.BR cabs (3),
+.BR casinh (3),
+.BR ccosh (3),
+.BR ctanh (3),
+.BR complex (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

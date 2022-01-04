@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: libwebp
+Description: Library for the WebP graphics format
+Version: 1.0.3
+Cflags: -I${includedir}
+Libs: -L${libdir} -lwebp
+Libs.private: -lm -pthread 

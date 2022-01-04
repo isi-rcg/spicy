@@ -1,0 +1,135 @@
+.\" Copyright (C) 1995, Thomas K. Dyas <tdyas@eden.rutgers.edu>
+.\" and Copyright (C) 2019, Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.\" Created   1995-08-06 Thomas K. Dyas <tdyas@eden.rutgers.edu>
+.\" Modified  2000-07-01 aeb
+.\" Modified  2002-07-23 aeb
+.\" Modified, 27 May 2004, Michael Kerrisk <mtk.manpages@gmail.com>
+.\"     Added notes on capability requirements
+.\"
+.TH SETFSGID 2 2019-05-09 "Linux" "Linux Programmer's Manual"
+.SH NAME
+setfsgid \- set group identity used for filesystem checks
+.SH SYNOPSIS
+.B #include <sys/fsuid.h>
+.PP
+.BI "int setfsgid(uid_t " fsgid );
+.SH DESCRIPTION
+On Linux, a process has both a filesystem group ID and an effective group ID.
+The (Linux-specific) filesystem group ID is used
+for permissions checking when accessing filesystem objects,
+while the effective group ID is used for some other kinds
+of permissions checks (see
+.BR credentials (7)).
+.PP
+Normally, the value of the process's filesystem group ID
+is the same as the value of its effective group ID.
+This is so, because whenever a process's effective group ID is changed,
+the kernel also changes the filesystem group ID to be the same as
+the new value of the effective group ID.
+A process can cause the value of its filesystem group ID to diverge
+from its effective group ID by using
+.BR setfsgid ()
+to change its filesystem group ID to the value given in
+.IR fsgid .
+.PP
+.BR setfsgid ()
+will succeed only if the caller is the superuser or if
+.I fsgid
+matches either the caller's real group ID, effective group ID,
+saved set-group-ID, or current the filesystem user ID.
+.SH RETURN VALUE
+On both success and failure,
+this call returns the previous filesystem group ID of the caller.
+.SH VERSIONS
+This system call is present in Linux since version 1.2.
+.\" This system call is present since Linux 1.1.44
+.\" and in libc since libc 4.7.6.
+.SH CONFORMING TO
+.BR setfsgid ()
+is Linux-specific and should not be used in programs intended
+to be portable.
+.SH NOTES
+The filesystem group ID concept and the
+.BR setfsgid ()
+system call were invented for historical reasons that are
+no longer applicable on modern Linux kernels.
+See
+.BR setfsuid (2)
+for a discussion of why the use of both
+.BR setfsuid (2)
+and
+.BR setfsgid ()
+is nowadays unneeded.
+.PP
+The original Linux
+.BR setfsgid ()
+system call supported only 16-bit group IDs.
+Subsequently, Linux 2.4 added
+.BR setfsgid32 ()
+supporting 32-bit IDs.
+The glibc
+.BR setfsgid ()
+wrapper function transparently deals with the variation across kernel versions.
+.SS C library/kernel differences
+In glibc 2.15 and earlier,
+when the wrapper for this system call determines that the argument can't be
+passed to the kernel without integer truncation (because the kernel
+is old and does not support 32-bit group IDs),
+it will return \-1 and set \fIerrno\fP to
+.B EINVAL
+without attempting
+the system call.
+.SH BUGS
+No error indications of any kind are returned to the caller,
+and the fact that both successful and unsuccessful calls return
+the same value makes it impossible to directly determine
+whether the call succeeded or failed.
+Instead, the caller must resort to looking at the return value
+from a further call such as
+.IR setfsgid(\-1)
+(which will always fail), in order to determine if a preceding call to
+.BR setfsgid ()
+changed the filesystem group ID.
+At the very
+least,
+.B EPERM
+should be returned when the call fails (because the caller lacks the
+.B CAP_SETGID
+capability).
+.SH SEE ALSO
+.BR kill (2),
+.BR setfsuid (2),
+.BR capabilities (7),
+.BR credentials (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

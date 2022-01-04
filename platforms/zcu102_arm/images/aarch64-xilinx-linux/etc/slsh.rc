@@ -1,0 +1,75 @@
+% -*- slang -*-
+
+% This file gets loaded whenever slsh runs.  Its primary purpose is to define
+% some functions that are useful in scripts, and to set up some local paths
+
+private define dir_exists (dir)
+{
+   if (dir == NULL) return 0;
+   variable s = stat_file (dir);
+   if (s == NULL) return 0;
+   return stat_is ("dir", s.st_mode);
+}
+
+private define check_dirs (dirs)
+{
+   if (dirs == NULL)
+     return NULL;
+
+   variable new_dirs = String_Type[0];
+   foreach (strchop (dirs, path_get_delimiter(), 0))
+     {
+	variable dir = ();
+	if (dir_exists (dir))
+	  new_dirs = [new_dirs, dir];
+     }
+   if (length (new_dirs) == 0)
+     return NULL;
+   return strjoin (new_dirs, char (path_get_delimiter()));
+}
+
+%!%+
+%\function{prepend_to_slang_load_path}
+%\synopsis{Prepend a directory to the load-path}
+%\usage{prepend_to_slang_load_path (String_Type dir)}
+%\description
+% This function adds a directory to the beginning of the interpreter's
+% load-path.
+%\seealso{append_to_slang_load_path, set_slang_load_path}
+%!%-
+public define prepend_to_slang_load_path (p)
+{
+   p = check_dirs (p);
+   if (p != NULL)
+     set_slang_load_path (sprintf ("%s%c%s", p, path_get_delimiter (), get_slang_load_path ()));
+}
+
+%!%+
+%\function{append_to_slang_load_path}
+%\synopsis{Append a directory to the load-path}
+%\usage{append_to_slang_load_path (String_Type dir)}
+%\description
+% This function adds a directory to the end of the interpreter's
+% load-path.
+%\seealso{prepend_to_slang_load_path, set_slang_load_path}
+%!%-
+public define append_to_slang_load_path (p)
+{
+   p = check_dirs (p);
+   if (p != NULL)
+     set_slang_load_path (sprintf ("%s%c%s", get_slang_load_path (), path_get_delimiter (), p));
+}
+
+% This function gets called from slsh after loading this file
+public define __slsh_startup_hook ()
+{
+   () = evalfile ("autoload.sl");
+#ifdef __INTERACTIVE__
+   () = evalfile ("slshrl.sl");
+#endif
+}
+prepend_to_slang_load_path (getenv (SLSH_PATH_ENV));
+
+% Add local additions here
+
+prepend_to_slang_load_path("/usr/share/slsh/local-packages");

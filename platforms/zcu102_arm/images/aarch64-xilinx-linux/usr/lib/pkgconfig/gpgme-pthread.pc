@@ -1,0 +1,15 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+# API info
+api_version=1
+host=aarch64-xilinx-linux-gnu
+
+Name: gpgme
+Description: GnuPG Made Easy (GPGME) is a C language library that allows to addsupport for cryptography to a program (deprecated)
+Version: 1.13.1-unknown
+Libs: -L${libdir} -lgpgme -lpthread
+Cflags: -I${includedir}
+Requires: libassuan gpg-error

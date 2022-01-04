@@ -1,0 +1,488 @@
+.\" Copyright (c) 2013 by Michael Kerrisk <mtk.manpages@gmail.com>
+.\" and Copyright (c) 2012 by Eric W. Biederman <ebiederm@xmission.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.\"
+.TH NAMESPACES 7 2019-03-06 "Linux" "Linux Programmer's Manual"
+.SH NAME
+namespaces \- overview of Linux namespaces
+.SH DESCRIPTION
+A namespace wraps a global system resource in an abstraction that
+makes it appear to the processes within the namespace that they
+have their own isolated instance of the global resource.
+Changes to the global resource are visible to other processes
+that are members of the namespace, but are invisible to other processes.
+One use of namespaces is to implement containers.
+.PP
+Linux provides the following namespaces:
+.TS
+lB lB lB
+l lB l.
+Namespace	Constant	Isolates
+Cgroup	CLONE_NEWCGROUP	Cgroup root directory
+IPC	CLONE_NEWIPC	System V IPC, POSIX message queues
+Network	CLONE_NEWNET	Network devices, stacks, ports, etc.
+Mount	CLONE_NEWNS	Mount points
+PID	CLONE_NEWPID	Process IDs
+User	CLONE_NEWUSER	User and group IDs
+UTS	CLONE_NEWUTS	Hostname and NIS domain name
+.TE
+.PP
+This page describes the various namespaces and the associated
+.I /proc
+files, and summarizes the APIs for working with namespaces.
+.\"
+.\" ==================== The namespaces API ====================
+.\"
+.SS The namespaces API
+As well as various
+.I /proc
+files described below,
+the namespaces API includes the following system calls:
+.TP
+.BR clone (2)
+The
+.BR clone (2)
+system call creates a new process.
+If the
+.I flags
+argument of the call specifies one or more of the
+.B CLONE_NEW*
+flags listed below, then new namespaces are created for each flag,
+and the child process is made a member of those namespaces.
+(This system call also implements a number of features
+unrelated to namespaces.)
+.TP
+.BR setns (2)
+The
+.BR setns (2)
+system call allows the calling process to join an existing namespace.
+The namespace to join is specified via a file descriptor that refers to
+one of the
+.IR /proc/[pid]/ns
+files described below.
+.TP
+.BR unshare (2)
+The
+.BR unshare (2)
+system call moves the calling process to a new namespace.
+If the
+.I flags
+argument of the call specifies one or more of the
+.B CLONE_NEW*
+flags listed below, then new namespaces are created for each flag,
+and the calling process is made a member of those namespaces.
+(This system call also implements a number of features
+unrelated to namespaces.)
+.TP
+.BR ioctl (2)
+Various
+.BR ioctl (2)
+operations can be used to discover information about namespaces.
+These operations are described in
+.BR ioctl_ns (2).
+.PP
+Creation of new namespaces using
+.BR clone (2)
+and
+.BR unshare (2)
+in most cases requires the
+.BR CAP_SYS_ADMIN
+capability, since, in the new namespace,
+the creator will have the power to change global resources
+that are visible to other processes that are subsequently created in,
+or join the namespace.
+User namespaces are the exception: since Linux 3.8,
+no privilege is required to create a user namespace.
+.\"
+.\" ==================== The /proc/[pid]/ns/ directory ====================
+.\"
+.SS The /proc/[pid]/ns/ directory
+Each process has a
+.IR /proc/[pid]/ns/
+.\" See commit 6b4e306aa3dc94a0545eb9279475b1ab6209a31f
+subdirectory containing one entry for each namespace that
+supports being manipulated by
+.BR setns (2):
+.PP
+.in +4n
+.EX
+$ \fBls \-l /proc/$$/ns\fP
+total 0
+lrwxrwxrwx. 1 mtk mtk 0 Apr 28 12:46 cgroup \-> cgroup:[4026531835]
+lrwxrwxrwx. 1 mtk mtk 0 Apr 28 12:46 ipc \-> ipc:[4026531839]
+lrwxrwxrwx. 1 mtk mtk 0 Apr 28 12:46 mnt \-> mnt:[4026531840]
+lrwxrwxrwx. 1 mtk mtk 0 Apr 28 12:46 net \-> net:[4026531969]
+lrwxrwxrwx. 1 mtk mtk 0 Apr 28 12:46 pid \-> pid:[4026531836]
+lrwxrwxrwx. 1 mtk mtk 0 Apr 28 12:46 pid_for_children \-> pid:[4026531834]
+lrwxrwxrwx. 1 mtk mtk 0 Apr 28 12:46 user \-> user:[4026531837]
+lrwxrwxrwx. 1 mtk mtk 0 Apr 28 12:46 uts \-> uts:[4026531838]
+.EE
+.in
+.PP
+Bind mounting (see
+.BR mount (2))
+one of the files in this directory
+to somewhere else in the filesystem keeps
+the corresponding namespace of the process specified by
+.I pid
+alive even if all processes currently in the namespace terminate.
+.PP
+Opening one of the files in this directory
+(or a file that is bind mounted to one of these files)
+returns a file handle for
+the corresponding namespace of the process specified by
+.IR pid .
+As long as this file descriptor remains open,
+the namespace will remain alive,
+even if all processes in the namespace terminate.
+The file descriptor can be passed to
+.BR setns (2).
+.PP
+In Linux 3.7 and earlier, these files were visible as hard links.
+Since Linux 3.8,
+.\" commit bf056bfa80596a5d14b26b17276a56a0dcb080e5
+they appear as symbolic links.
+If two processes are in the same namespace,
+then the device IDs and inode numbers of their
+.IR /proc/[pid]/ns/xxx
+symbolic links will be the same; an application can check this using the
+.I stat.st_dev
+and
+.I stat.st_ino
+fields returned by
+.BR stat (2).
+The content of this symbolic link is a string containing
+the namespace type and inode number as in the following example:
+.PP
+.in +4n
+.EX
+$ \fBreadlink /proc/$$/ns/uts\fP
+uts:[4026531838]
+.EE
+.in
+.PP
+The symbolic links in this subdirectory are as follows:
+.TP
+.IR /proc/[pid]/ns/cgroup " (since Linux 4.6)"
+This file is a handle for the cgroup namespace of the process.
+.TP
+.IR /proc/[pid]/ns/ipc " (since Linux 3.0)"
+This file is a handle for the IPC namespace of the process.
+.TP
+.IR /proc/[pid]/ns/mnt " (since Linux 3.8)"
+.\" commit 8823c079ba7136dc1948d6f6dcb5f8022bde438e
+This file is a handle for the mount namespace of the process.
+.TP
+.IR /proc/[pid]/ns/net " (since Linux 3.0)"
+This file is a handle for the network namespace of the process.
+.TP
+.IR /proc/[pid]/ns/pid " (since Linux 3.8)"
+.\" commit 57e8391d327609cbf12d843259c968b9e5c1838f
+This file is a handle for the PID namespace of the process.
+This handle is permanent for the lifetime of the process
+(i.e., a process's PID namespace membership never changes).
+.TP
+.IR /proc/[pid]/ns/pid_for_children " (since Linux 4.12)"
+.\" commit eaa0d190bfe1ed891b814a52712dcd852554cb08
+This file is a handle for the PID namespace of
+child processes created by this process.
+This can change as a consequence of calls to
+.BR unshare (2)
+and
+.BR setns (2)
+(see
+.BR pid_namespaces (7)),
+so the file may differ from
+.IR /proc/[pid]/ns/pid .
+The symbolic link gains a value only after the first child process
+is created in the namespace.
+(Beforehand,
+.BR readlink (2)
+of the symbolic link will return an empty buffer.)
+.TP
+.IR /proc/[pid]/ns/user " (since Linux 3.8)"
+.\" commit cde1975bc242f3e1072bde623ef378e547b73f91
+This file is a handle for the user namespace of the process.
+.TP
+.IR /proc/[pid]/ns/uts " (since Linux 3.0)"
+This file is a handle for the UTS namespace of the process.
+.PP
+Permission to dereference or read
+.RB ( readlink (2))
+these symbolic links is governed by a ptrace access mode
+.B PTRACE_MODE_READ_FSCREDS
+check; see
+.BR ptrace (2).
+.\"
+.\" ==================== The /proc/sys/user directory ====================
+.\"
+.SS The /proc/sys/user directory
+The files in the
+.I /proc/sys/user
+directory (which is present since Linux 4.9) expose limits
+on the number of namespaces of various types that can be created.
+The files are as follows:
+.TP
+.IR max_cgroup_namespaces
+The value in this file defines a per-user limit on the number of
+cgroup namespaces that may be created in the user namespace.
+.TP
+.IR max_ipc_namespaces
+The value in this file defines a per-user limit on the number of
+ipc namespaces that may be created in the user namespace.
+.TP
+.IR max_mnt_namespaces
+The value in this file defines a per-user limit on the number of
+mount namespaces that may be created in the user namespace.
+.TP
+.IR max_net_namespaces
+The value in this file defines a per-user limit on the number of
+network namespaces that may be created in the user namespace.
+.TP
+.IR max_pid_namespaces
+The value in this file defines a per-user limit on the number of
+pid namespaces that may be created in the user namespace.
+.TP
+.IR max_user_namespaces
+The value in this file defines a per-user limit on the number of
+user namespaces that may be created in the user namespace.
+.TP
+.IR max_uts_namespaces
+The value in this file defines a per-user limit on the number of
+uts namespaces that may be created in the user namespace.
+.PP
+Note the following details about these files:
+.IP * 3
+The values in these files are modifiable by privileged processes.
+.IP *
+The values exposed by these files are the limits for the user namespace
+in which the opening process resides.
+.IP *
+The limits are per-user.
+Each user in the same user namespace
+can create namespaces up to the defined limit.
+.IP *
+The limits apply to all users, including UID 0.
+.IP *
+These limits apply in addition to any other per-namespace
+limits (such as those for PID and user namespaces) that may be enforced.
+.IP *
+Upon encountering these limits,
+.BR clone (2)
+and
+.BR unshare (2)
+fail with the error
+.BR ENOSPC .
+.IP *
+For the initial user namespace,
+the default value in each of these files is half the limit on the number
+of threads that may be created
+.RI ( /proc/sys/kernel/threads-max ).
+In all descendant user namespaces, the default value in each file is
+.BR MAXINT .
+.IP *
+When a namespace is created, the object is also accounted
+against ancestor namespaces.
+More precisely:
+.RS
+.IP + 3
+Each user namespace has a creator UID.
+.IP +
+When a namespace is created,
+it is accounted against the creator UIDs in each of the
+ancestor user namespaces,
+and the kernel ensures that the corresponding namespace limit
+for the creator UID in the ancestor namespace is not exceeded.
+.IP +
+The aforementioned point ensures that creating a new user namespace
+cannot be used as a means to escape the limits in force
+in the current user namespace.
+.RE
+.\"
+.\" ==================== Cgroup namespaces ====================
+.\"
+.SS Cgroup namespaces (CLONE_NEWCGROUP)
+See
+.BR cgroup_namespaces (7).
+.\"
+.\" ==================== IPC namespaces ====================
+.\"
+.SS IPC namespaces (CLONE_NEWIPC)
+IPC namespaces isolate certain IPC resources,
+namely, System V IPC objects (see
+.BR svipc (7))
+and (since Linux 2.6.30)
+.\" commit 7eafd7c74c3f2e67c27621b987b28397110d643f
+.\" https://lwn.net/Articles/312232/
+POSIX message queues (see
+.BR mq_overview (7)).
+The common characteristic of these IPC mechanisms is that IPC
+objects are identified by mechanisms other than filesystem
+pathnames.
+.PP
+Each IPC namespace has its own set of System V IPC identifiers and
+its own POSIX message queue filesystem.
+Objects created in an IPC namespace are visible to all other processes
+that are members of that namespace,
+but are not visible to processes in other IPC namespaces.
+.PP
+The following
+.I /proc
+interfaces are distinct in each IPC namespace:
+.IP * 3
+The POSIX message queue interfaces in
+.IR /proc/sys/fs/mqueue .
+.IP *
+The System V IPC interfaces in
+.IR /proc/sys/kernel ,
+namely:
+.IR msgmax ,
+.IR msgmnb  ,
+.IR msgmni ,
+.IR sem ,
+.IR shmall ,
+.IR shmmax ,
+.IR shmmni ,
+and
+.IR shm_rmid_forced .
+.IP *
+The System V IPC interfaces in
+.IR /proc/sysvipc .
+.PP
+When an IPC namespace is destroyed
+(i.e., when the last process that is a member of the namespace terminates),
+all IPC objects in the namespace are automatically destroyed.
+.PP
+Use of IPC namespaces requires a kernel that is configured with the
+.B CONFIG_IPC_NS
+option.
+.\"
+.\" ==================== Network namespaces ====================
+.\"
+.SS Network namespaces (CLONE_NEWNET)
+See
+.BR network_namespaces (7).
+.\"
+.\" ==================== Mount namespaces ====================
+.\"
+.SS Mount namespaces (CLONE_NEWNS)
+See
+.BR mount_namespaces (7).
+.\"
+.\" ==================== PID namespaces ====================
+.\"
+.SS PID namespaces (CLONE_NEWPID)
+See
+.BR pid_namespaces (7).
+.\"
+.\" ==================== User namespaces ====================
+.\"
+.SS User namespaces (CLONE_NEWUSER)
+See
+.BR user_namespaces (7).
+.\"
+.\" ==================== UTS namespaces ====================
+.\"
+.SS UTS namespaces (CLONE_NEWUTS)
+UTS namespaces provide isolation of two system identifiers:
+the hostname and the NIS domain name.
+These identifiers are set using
+.BR sethostname (2)
+and
+.BR setdomainname (2),
+and can be retrieved using
+.BR uname (2),
+.BR gethostname (2),
+and
+.BR getdomainname (2).
+.PP
+Use of UTS namespaces requires a kernel that is configured with the
+.B CONFIG_UTS_NS
+option.
+.\"
+.SS Namespace lifetime
+Absent any other factors,
+a namespace is automatically torn down when the last process in
+the namespace terminates or leaves the namespace.
+However, there are a number of other factors that may pin
+a namespace into existence even though it has no member processes.
+These factors include the following:
+.IP * 3
+An open file descriptor or a bind mount exists for the corresponding
+.IR /proc/[pid]/ns/*
+file.
+.IP *
+The namespace is hierarchical (i.e., a PID or user namespace),
+and has a child namespace.
+.IP *
+It is a user namespace that owns one or more nonuser namespaces.
+.IP *
+It is a PID namespace,
+and there is a process that refers to the namespace via a
+.IR /proc/[pid]/ns/pid_for_children
+symbolic link.
+.IP *
+It is an IPC namespace, and a corresponding mount of an
+.I mqueue
+filesystem (see
+.BR mq_overview (7))
+refers to this namespace.
+.IP *
+It is a PID namespace, and a corresponding mount of a
+.BR proc (5)
+filesystem refers to this namespace.
+.SH EXAMPLE
+See
+.BR clone (2)
+and
+.BR user_namespaces (7).
+.SH SEE ALSO
+.BR nsenter (1),
+.BR readlink (1),
+.BR unshare (1),
+.BR clone (2),
+.BR ioctl_ns (2),
+.BR setns (2),
+.BR unshare (2),
+.BR proc (5),
+.BR capabilities (7),
+.BR cgroup_namespaces (7),
+.BR cgroups (7),
+.BR credentials (7),
+.BR network_namespaces (7),
+.BR pid_namespaces (7),
+.BR user_namespaces (7),
+.BR lsns (8),
+.BR pam_namespace (8),
+.BR switch_root (8)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

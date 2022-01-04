@@ -1,0 +1,8 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+ 
+Name: KBProto
+Description: KB extension headers
+Version: 1.0.7
+Cflags: -I${includedir}

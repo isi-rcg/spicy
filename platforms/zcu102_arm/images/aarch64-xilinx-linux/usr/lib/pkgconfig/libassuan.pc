@@ -1,0 +1,14 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+libdir=/usr/lib
+host=aarch64-xilinx-linux-gnu
+api_version=2
+
+Name: libassuan
+Description: IPC library for the GnuPG components
+Requires: gpg-error
+Version: 2.5.3-unknown
+Cflags: 
+Libs: -lassuan
+URL: https://www.gnupg.org/related_software/libassuan/index.html

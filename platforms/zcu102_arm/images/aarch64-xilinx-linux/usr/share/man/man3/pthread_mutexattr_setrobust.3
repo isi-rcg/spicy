@@ -1,0 +1,294 @@
+.\" Copyright (c) 2017, Yubin Ruan <ablacktshirt@gmail.com>
+.\" and Copyright (c) 2017, Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.TH PTHREAD_MUTEXATTR_SETROBUST 3 2019-03-06 "Linux" "Linux Programmer's Manual"
+.SH NAME
+pthread_mutexattr_getrobust, pthread_mutexattr_setrobust
+\- get and set the robustness attribute of a mutex attributes object
+.SH SYNOPSIS
+.nf
+.B #include <pthread.h>
+.PP
+.BI "int pthread_mutexattr_getrobust(const pthread_mutexattr_t *" attr ,
+.BI "                                int *" robustness ");"
+.BI "int pthread_mutexattr_setrobust(const pthread_mutexattr_t *" attr ,
+.BI "                                int " robustness ");"
+.fi
+.PP
+Compile and link with \fI\-pthread\fP.
+.PP
+.in -4n
+Feature Test Macro Requirements for glibc (see
+.BR feature_test_macros (7)):
+.in
+.PP
+.BR pthread_mutexattr_getrobust (),
+.BR pthread_mutexattr_setrobust ():
+.br
+.RS 4
+.ad l
+_POSIX_C_SOURCE >= 200809L
+.\" FIXME .
+.\" But see https://sourceware.org/bugzilla/show_bug.cgi?id=22125
+.RE
+.ad
+.SH DESCRIPTION
+The
+.BR pthread_mutexattr_getrobust ()
+function places the value of the robustness attribute of
+the mutex attributes object referred to by
+.I attr
+in
+.IR *robustness .
+The
+.BR pthread_mutexattr_setrobust ()
+function sets the value of the robustness attribute of
+the mutex attributes object referred to by
+.I attr
+to the value specified in
+.IR *robustness .
+.PP
+The robustness attribute specifies the behavior of the mutex when
+the owning thread dies without unlocking the mutex.
+The following values are valid for
+.IR robustness :
+.TP
+.BR PTHREAD_MUTEX_STALLED
+This is the default value for a mutex attributes object.
+If a mutex is initialized with the
+.BR PTHREAD_MUTEX_STALLED
+attribute and its owner dies without unlocking it,
+the mutex remains locked afterwards and any future attempts to call
+.BR pthread_mutex_lock (3)
+on the mutex will block indefinitely.
+.TP
+.B PTHREAD_MUTEX_ROBUST
+If a mutex is initialized with the
+.BR PTHREAD_MUTEX_ROBUST
+attribute and its owner dies without unlocking it,
+any future attempts to call
+.BR pthread_mutex_lock (3)
+on this mutex will succeed and return
+.B EOWNERDEAD
+to indicate that the original owner no longer exists and the mutex is in
+an inconsistent state.
+Usually after
+.B EOWNERDEAD
+is returned, the next owner should call
+.BR pthread_mutex_consistent (3)
+on the acquired mutex to make it consistent again before using it any further.
+.IP
+If the next owner unlocks the mutex using
+.BR pthread_mutex_unlock (3)
+before making it consistent, the mutex will be permanently unusable and any
+subsequent attempts to lock it using
+.BR pthread_mutex_lock (3)
+will fail with the error
+.BR ENOTRECOVERABLE .
+The only permitted operation on such a mutex is
+.BR pthread_mutex_destroy (3).
+.IP
+If the next owner terminates before calling
+.BR pthread_mutex_consistent (3),
+further
+.BR pthread_mutex_lock (3)
+operations on this mutex will still return
+.BR EOWNERDEAD .
+.PP
+Note that the
+.IR attr
+argument of
+.BR pthread_mutexattr_getrobust ()
+and
+.BR pthread_mutexattr_setrobust ()
+should refer to a mutex attributes object that was initialized by
+.BR pthread_mutexattr_init (3),
+otherwise the behavior is undefined.
+.SH RETURN VALUE
+On success, these functions return 0.
+On error, they return a positive error number.
+.PP
+In the glibc implementation,
+.BR pthread_mutexattr_getrobust ()
+always return zero.
+.SH ERRORS
+.TP
+.B EINVAL
+A value other than
+.B PTHREAD_MUTEX_STALLED
+or
+.B PTHREAD_MUTEX_ROBUST
+was passed to
+.BR pthread_mutexattr_setrobust ().
+.SH VERSIONS
+.BR pthread_mutexattr_getrobust ()
+and
+.BR pthread_mutexattr_setrobust ()
+were added to glibc in version 2.12.
+.SH CONFORMING TO
+POSIX.1-2008.
+.SH NOTES
+In the Linux implementation,
+when using process-shared robust mutexes, a waiting thread also receives the
+.B EOWNERDEAD
+notification if the owner of a robust mutex performs an
+.BR execve (2)
+without first unlocking the mutex.
+POSIX.1 does not specify this detail,
+but the same behavior also occurs in at least some
+.\" E.g., Solaris, according to its manual page
+other implementations.
+.PP
+Before the addition of
+.BR pthread_mutexattr_getrobust ()
+and
+.BR pthread_mutexattr_setrobust ()
+to POSIX,
+glibc defined the following equivalent nonstandard functions if
+.BR _GNU_SOURCE
+was defined:
+.PP
+.nf
+.BI "int pthread_mutexattr_getrobust_np(const pthread_mutexattr_t *" attr ,
+.BI "                                   int *" robustness ");"
+.BI "int pthread_mutexattr_setrobust_np(const pthread_mutexattr_t *" attr ,
+.BI "                                   int " robustness ");"
+.fi
+.PP
+Correspondingly, the constants
+.B PTHREAD_MUTEX_STALLED_NP
+and
+.B PTHREAD_MUTEX_ROBUST_NP
+were also defined.
+.PP
+These GNU-specific APIs, which first appeared in glibc 2.4,
+are nowadays obsolete and should not be used in new programs.
+.SH EXAMPLE
+.PP
+The program below demonstrates the use of the robustness attribute of a
+mutex attributes object.
+In this program, a thread holding the mutex
+dies prematurely without unlocking the mutex.
+The main thread subsequently acquires the mutex
+successfully and gets the error
+.BR EOWNERDEAD ,
+after which it makes the mutex consistent.
+.PP
+The following shell session shows what we see when running this program:
+.PP
+.in +4n
+.EX
+$ \fB./a.out\fP
+[original owner] Setting lock...
+[original owner] Locked. Now exiting without unlocking.
+[main thread] Attempting to lock the robust mutex.
+[main thread] pthread_mutex_lock() returned EOWNERDEAD
+[main thread] Now make the mutex consistent
+[main thread] Mutex is now consistent; unlocking
+.EE
+.in
+.SS Program source
+.EX
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <errno.h>
+
+#define handle_error_en(en, msg) \e
+               do { errno = en; perror(msg); exit(EXIT_FAILURE); } while (0)
+
+static pthread_mutex_t mtx;
+
+static void *
+original_owner_thread(void *ptr)
+{
+    printf("[original owner] Setting lock...\en");
+    pthread_mutex_lock(&mtx);
+    printf("[original owner] Locked. Now exiting without unlocking.\en");
+    pthread_exit(NULL);
+}
+
+int
+main(int argc, char *argv[])
+{
+    pthread_t thr;
+    pthread_mutexattr_t attr;
+    int s;
+
+    pthread_mutexattr_init(&attr);
+                                /* initialize the attributes object */
+    pthread_mutexattr_setrobust(&attr, PTHREAD_MUTEX_ROBUST);
+                               /* set robustness */
+
+    pthread_mutex_init(&mtx, &attr);   /* initialize the mutex */
+
+    pthread_create(&thr, NULL, original_owner_thread, NULL);
+
+    sleep(2);
+
+    /* "original_owner_thread" should have exited by now */
+
+    printf("[main thread] Attempting to lock the robust mutex.\en");
+    s = pthread_mutex_lock(&mtx);
+    if (s == EOWNERDEAD) {
+        printf("[main thread] pthread_mutex_lock() returned EOWNERDEAD\en");
+        printf("[main thread] Now make the mutex consistent\en");
+        s = pthread_mutex_consistent(&mtx);
+        if (s != 0)
+            handle_error_en(s, "pthread_mutex_consistent");
+        printf("[main thread] Mutex is now consistent; unlocking\en");
+        s = pthread_mutex_unlock(&mtx);
+        if (s != 0)
+            handle_error_en(s, "pthread_mutex_unlock");
+
+        exit(EXIT_SUCCESS);
+    } else if (s == 0) {
+        printf("[main thread] pthread_mutex_lock() unexpectedly succeeded\en");
+        exit(EXIT_FAILURE);
+    } else {
+        printf("[main thread] pthread_mutex_lock() unexpectedly failed\en");
+        handle_error_en(s, "pthread_mutex_lock");
+    }
+}
+.EE
+.SH SEE ALSO
+.ad l
+.nh
+.BR get_robust_list (2),
+.BR set_robust_list (2),
+.BR pthread_mutex_init (3),
+.BR pthread_mutex_consistent (3),
+.BR pthread_mutex_lock (3),
+.BR pthreads (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

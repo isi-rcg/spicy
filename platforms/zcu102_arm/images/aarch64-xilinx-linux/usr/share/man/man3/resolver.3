@@ -1,0 +1,529 @@
+.\" Copyright 1993 David Metcalfe (david@prism.demon.co.uk)
+.\" and (C) Copyright 2015 Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.\" References consulted:
+.\"     Linux libc source code
+.\"     Lewine's _POSIX Programmer's Guide_ (O'Reilly & Associates, 1991)
+.\"     386BSD man pages
+.\" Modified 1993-07-25 by Rik Faith (faith@cs.unc.edu)
+.\" Modified 2004-10-31 by aeb
+.\"
+.TH RESOLVER 3 2019-03-06 "GNU" "Linux Programmer's Manual"
+.SH NAME
+res_ninit, res_nclose, res_nquery, res_nsearch, res_nquerydomain, res_nmkquery, res_nsend,
+res_init, res_query, res_search, res_querydomain, res_mkquery, res_send,
+dn_comp, dn_expand \- resolver routines
+.SH SYNOPSIS
+.nf
+.B #include <netinet/in.h>
+.B #include <arpa/nameser.h>
+.B #include <resolv.h>
+.PP
+.B struct __res_state;
+.B typedef struct __res_state *res_state;
+.PP
+.BI "int res_ninit(res_state " statep );
+.PP
+.BI "void res_nclose(res_state " statep );
+.PP
+.BI "int res_nquery(res_state " statep ,
+.BI "           const char *" dname ", int " class ", int " type ,
+.BI "           unsigned char *" answer ", int " anslen );
+.PP
+.BI "int res_nsearch(res_state " statep ,
+.BI "           const char *" dname ", int " class ", int " type ,
+.BI "           unsigned char *" answer ", int " anslen );
+.PP
+.BI "int res_nquerydomain(res_state " statep ,
+.BI "           const char *" name ", const char *" domain ,
+.BI "           int " class ", int " type ", unsigned char *" answer ,
+.BI "           int " anslen );
+.PP
+.BI "int res_nmkquery(res_state " statep ,
+.BI "           int " op ", const char *" dname ", int " class ,
+.BI "           int " type ", const unsigned char *" data ", int " datalen ,
+.BI "           const unsigned char *" newrr ,
+.BI "           unsigned char *" buf ", int " buflen );
+.PP
+.BI "int res_nsend(res_state " statep ,
+.BI "           const unsigned char *" msg ", int " msglen ,
+.BI "           unsigned char *" answer ", int " anslen );
+.PP
+.BI "int dn_comp(const char *" exp_dn ", unsigned char *" comp_dn ,
+.BI "           int " length ", unsigned char **" dnptrs ,
+.BI "           unsigned char **" lastdnptr );
+.PP
+.BI "int dn_expand(const unsigned char *" msg ,
+.BI "           const unsigned char *" eomorig ,
+.BI "           const unsigned char *" comp_dn ", char *" exp_dn ,
+.BI "           int " length );
+.fi
+.\"
+.SS Deprecated
+.nf
+.B extern struct __res_state _res;
+.PP
+.B int res_init(void);
+.PP
+.BI "int res_query(const char *" dname ", int " class ", int " type ,
+.BI "           unsigned char *" answer ", int " anslen );
+.PP
+.BI "int res_search(const char *" dname ", int " class ", int " type ,
+.BI "           unsigned char *" answer ", int " anslen );
+.PP
+.BI "int res_querydomain(const char *" name ", const char *" domain ,
+.BI "           int " class ", int " type ", unsigned char *" answer ,
+.BI "           int " anslen );
+.PP
+.BI "int res_mkquery(int " op ", const char *" dname ", int " class ,
+.BI "           int " type ", const unsigned char *" data ", int " datalen ,
+.BI "           const unsigned char *" newrr ,
+.BI "           unsigned char *" buf ", int " buflen );
+.PP
+.BI "int res_send(const unsigned char *" msg ", int " msglen ,
+.BI "           unsigned char *" answer ", int " anslen );
+.fi
+.PP
+Link with \fI\-lresolv\fP.
+.SH DESCRIPTION
+.B Note:
+This page is incomplete (various resolver functions provided by glibc
+are not described) and likely out of date.
+.PP
+The functions described below make queries to and interpret
+the responses from Internet domain name servers.
+.PP
+The API consists of a set of more modern, reentrant functions
+and an older set of nonreentrant functions that have been superseded.
+The traditional resolver interfaces such as
+.BR res_init ()
+and
+.BR res_query ()
+use some static (global) state stored in the
+.I _res
+structure, rendering these functions non-thread-safe.
+BIND 8.2 introduced a set of new interfaces
+.BR res_ninit (),
+.BR res_nquery (),
+and so on, which take a
+.I res_state
+as their first argument, so you can use a per-thread resolver state.
+.PP
+The
+.BR res_ninit ()
+and
+.BR res_init ()
+functions read the configuration files (see
+.BR resolv.conf (5))
+to get the default domain name and name
+server address(es).
+If no server is given, the local host is tried.
+If no domain is given, that associated with the local host is used.
+It can be overridden with the environment variable
+.BR LOCALDOMAIN .
+.BR res_ninit ()
+or
+.BR res_init ()
+is normally executed by the first call to one of the
+other functions.
+Every call to
+.BR res_ninit ()
+requires a corresponding call to
+.BR res_nclose ()
+to free memory allocated by
+.BR res_ninit ()
+and subsequent calls to
+.BR res_nquery ().
+.PP
+The
+.BR res_nquery ()
+and
+.BR res_query ()
+functions query the name server for the
+fully qualified domain name \fIname\fP of specified \fItype\fP and
+\fIclass\fP.
+The reply is left in the buffer \fIanswer\fP of length
+\fIanslen\fP supplied by the caller.
+.PP
+The
+.BR res_nsearch ()
+and
+.BR res_search ()
+functions make a query and waits for the response like
+.BR res_nquery ()
+and
+.BR res_query (),
+but in addition they implement the default and search
+rules controlled by
+.B RES_DEFNAMES
+and
+.B RES_DNSRCH
+(see description of
+\fI_res\fP options below).
+.PP
+The
+.BR res_nquerydomain ()
+and
+.BR res_querydomain ()
+functions make a query using
+.BR res_nquery ()/ res_query ()
+on the concatenation of \fIname\fP and \fIdomain\fP.
+.PP
+The following functions are lower-level routines used by
+.BR res_query ()/ res_query ().
+.PP
+The
+.BR res_nmkquery ()
+and
+.BR res_mkquery ()
+functions construct a query message in \fIbuf\fP
+of length \fIbuflen\fP for the domain name \fIdname\fP.
+The query type
+\fIop\fP is one of the following (typically
+.BR QUERY ):
+.TP
+.B QUERY
+Standard query.
+.TP
+.B IQUERY
+Inverse query.
+This option was removed in glibc 2.26,
+.\" commit e4e794841e3140875f2aa86b90e2ada3d61e1244
+since it has not been supported by DNS servers for a very long time.
+.TP
+.B NS_NOTIFY_OP
+Notify secondary of SOA (Start of Authority) change.
+.PP
+\fInewrr\fP is currently unused.
+.PP
+The
+.BR res_nsend ()
+and
+.BR res_send ()
+function send a preformatted query given in
+\fImsg\fP of length \fImsglen\fP and returns the answer in \fIanswer\fP
+which is of length \fIanslen\fP.
+They will call
+.BR res_ninit ()/ res_init ()
+if it has not already been called.
+.PP
+The
+.BR dn_comp ()
+function compresses the domain name \fIexp_dn\fP
+and stores it in the buffer \fIcomp_dn\fP of length \fIlength\fP.
+The compression uses an array of pointers \fIdnptrs\fP to previously
+compressed names in the current message.
+The first pointer points
+to the beginning of the message and the list ends with NULL.
+The limit of the array is specified by \fIlastdnptr\fP.
+If \fIdnptr\fP is NULL, domain names are not compressed.
+If \fIlastdnptr\fP is NULL, the list
+of labels is not updated.
+.PP
+The
+.BR dn_expand ()
+function expands the compressed domain name
+\fIcomp_dn\fP to a full domain name, which is placed in the buffer
+\fIexp_dn\fP of size \fIlength\fP.
+The compressed name is contained
+in a query or reply message, and \fImsg\fP points to the beginning of
+the message.
+.PP
+The resolver routines use configuration and state information
+contained in a
+.IR __res_state
+structure (either passed as the
+.IR statep
+argument, or in the global variable
+.IR _res ,
+in the case of the older nonreentrant functions).
+The only field of this structure that is normally manipulated by the
+user is the
+.IR options
+field.
+This field can contain the bitwise "OR"
+of the following options:
+.TP
+.B RES_INIT
+True if
+.BR res_ninit ()
+or
+.BR res_init ()
+has been called.
+.TP
+.B RES_DEBUG
+Print debugging messages.
+This option is available only if glibc was built with debugging enabled,
+.\" See resolv/README.
+.\" Support for RES_DEBUG was made conditional in glibc 2.2.
+which is not the default.
+.TP
+.BR RES_AAONLY " (unimplemented; deprecated in glibc 2.25)"
+Accept authoritative answers only.
+.BR res_send ()
+continues until
+it finds an authoritative answer or returns an error.
+This option was present but unimplemented in glibc until version 2.24;
+since glibc 2.25, it is deprecated, and its usage produces a warning.
+.TP
+.B RES_USEVC
+Use TCP connections for queries rather than UDP datagrams.
+.TP
+.BR RES_PRIMARY " (unimplemented; deprecated in glibc 2.25)"
+Query primary domain name server only.
+This option was present but unimplemented in glibc until version 2.24;
+since glibc 2.25, it is deprecated, and its usage produces a warning.
+.TP
+.B RES_IGNTC
+Ignore truncation errors.
+Don't retry with TCP.
+.TP
+.B RES_RECURSE
+Set the recursion desired bit in queries.
+Recursion is carried out
+by the domain name server, not by
+.BR res_send ().
+[Enabled by default].
+.TP
+.B RES_DEFNAMES
+If set,
+.BR res_search ()
+will append the default domain name to
+single component names\(emthat is, those that do not contain a dot.
+[Enabled by default].
+.TP
+.B RES_STAYOPEN
+Used with
+.B RES_USEVC
+to keep the TCP connection open between queries.
+.TP
+.B RES_DNSRCH
+If set,
+.BR res_search ()
+will search for hostnames in the current
+domain and in parent domains.
+This option is used by
+.BR gethostbyname (3).
+[Enabled by default].
+.TP
+.B RES_INSECURE1
+Accept a response from a wrong server.
+This can be used to detect potential security hazards,
+but you need to compile glibc with debugging enabled and use
+.B RES_DEBUG
+option (for debug purpose only).
+.TP
+.B RES_INSECURE2
+Accept a response which contains a wrong query.
+This can be used to detect potential security hazards,
+but you need to compile glibc with debugging enabled and use
+.B RES_DEBUG
+option (for debug purpose only).
+.TP
+.B RES_NOALIASES
+Disable usage of
+.B HOSTALIASES
+environment variable.
+.TP
+.B RES_USE_INET6
+Try an AAAA query before an A query inside the
+.BR gethostbyname (3)
+function, and map IPv4 responses in IPv6 "tunneled form" if no AAAA records
+are found but an A record set exists.
+Since glibc 2.25, this option is deprecated,
+and its usage produces a warning;
+applications should use
+.BR getaddrinfo (3),
+rather than
+.BR gethostbyname (3).
+.TP
+.B RES_ROTATE
+Causes round-robin selection of name servers from among those listed.
+This has the effect of spreading the query load among all listed servers,
+rather than having all clients try the first listed server first every
+time.
+.TP
+.BR RES_NOCHECKNAME " (unimplemented; deprecated in glibc 2.25)"
+Disable the modern BIND checking of incoming hostnames and mail names
+for invalid characters such as underscore (_), non-ASCII,
+or control characters.
+This option was present in glibc until version 2.24;
+since glibc 2.25, it is deprecated, and its usage produces a warning.
+.TP
+.BR RES_KEEPTSIG " (unimplemented; deprecated in glibc 2.25)"
+Do not strip TSIG records.
+This option was present but unimplemented in glibc until version 2.24;
+since glibc 2.25, it is deprecated, and its usage produces a warning.
+.TP
+.B RES_BLAST " (unimplemented; deprecated in glibc 2.25)"
+Send each query simultaneously and recursively to all servers.
+This option was present but unimplemented in glibc until version 2.24;
+since glibc 2.25, it is deprecated, and its usage produces a warning.
+.TP
+.BR RES_USEBSTRING " (glibc 2.3.4 to 2.24)"
+Make reverse IPv6 lookups using the bit-label format described in RFC 2673;
+if this option is not set (which is the default), then nibble format is used.
+This option was removed in glibc 2.25,
+since it relied on a backward-incompatible
+DNS extension that was never deployed on the Internet.
+.TP
+.BR RES_NOIP6DOTINT " (glibc 2.24 and earlier)"
+Use
+.I ip6.arpa
+zone in IPv6 reverse lookup instead of
+.IR ip6.int ,
+which is deprecated since glibc 2.3.4.
+This option is present in glibc up to and including version 2.24,
+where it is enabled by default.
+In glibc 2.25, this option was removed.
+.TP
+.BR RES_USE_EDNS0 " (since glibc 2.6)"
+Enables support for the DNS extensions (EDNS0) described in RFC 2671.
+.TP
+.BR RES_SNGLKUP " (since glibc 2.10)"
+By default, glibc performs IPv4 and IPv6 lookups in parallel since
+version 2.9.
+Some appliance DNS servers cannot handle these queries properly
+and make the requests time out.
+This option disables the behavior and makes glibc
+perform the IPv6 and IPv4 requests sequentially
+(at the cost of some slowdown of the resolving process).
+.TP
+.B RES_SNGLKUPREOP
+When
+.B RES_SNGLKUP
+option is enabled, opens a new socket for the each request.
+.TP
+.B RES_USE_DNSSEC
+Use DNSSEC with OK bit in OPT record.
+This option implies
+.BR RES_USE_EDNS0 .
+.TP
+.B RES_NOTLDQUERY
+Do not look up unqualified name as a top-level domain (TLD).
+.TP
+.B RES_DEFAULT
+Default option which implies:
+.BR RES_RECURSE ,
+.BR RES_DEFNAMES ,
+.BR RES_DNSRCH
+and
+.BR RES_NOIP6DOTINT .
+.\"
+.SH RETURN VALUE
+The
+.BR res_ninit ()
+and
+.BR res_init ()
+functions return 0 on success, or \-1 if an error
+occurs.
+.PP
+The
+.BR res_nquery (),
+.BR res_query (),
+.BR res_nsearch (),
+.BR res_search (),
+.BR res_nquerydomain (),
+.BR res_querydomain (),
+.BR res_nmkquery (),
+.BR res_mkquery (),
+.BR res_nsend (),
+and
+.BR res_send ()
+functions return the length
+of the response, or \-1 if an error occurs.
+.PP
+The
+.BR dn_comp ()
+and
+.BR dn_expand ()
+functions return the length
+of the compressed name, or \-1 if an error occurs.
+.PP
+In the case of an error return from
+.BR res_nquery (),
+.BR res_query (),
+.BR res_nsearch (),
+.BR res_search (),
+.BR res_nquerydomain (),
+or
+.BR res_querydomain (),
+the global variable
+.I h_errno
+(see
+.BR gethostbyname (3))
+can be consulted to determine the cause of the error.
+.SH FILES
+.TP
+.I /etc/resolv.conf
+resolver configuration file
+.TP
+.I /etc/host.conf
+resolver configuration file
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbw34 lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR res_ninit (),
+.BR res_nclose (),
+.BR res_nquery (),
+.br
+.BR res_nsearch (),
+.BR res_nquerydomain (),
+.BR res_nsend ()
+T}	Thread safety	MT-Safe locale
+T{
+.BR res_nmkquery (),
+.BR dn_comp (),
+.br
+.BR dn_expand ()
+T}	Thread safety	MT-Safe
+.TE
+.sp 1
+.SH CONFORMING TO
+4.3BSD.
+.SH SEE ALSO
+.BR gethostbyname (3),
+.BR resolv.conf (5),
+.BR resolver (5),
+.BR hostname (7),
+.BR named (8)
+.PP
+The GNU C library source file
+.IR resolv/README .
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

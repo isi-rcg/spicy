@@ -1,0 +1,90 @@
+.\" Copyright (c) 2017 by Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.\"
+.TH NETWORK_NAMESPACES 7 2018-02-02 "Linux" "Linux Programmer's Manual"
+.SH NAME
+network_namespaces \- overview of Linux network namespaces
+.SH DESCRIPTION
+Network namespaces provide isolation of the system resources associated
+with networking: network devices, IPv4 and IPv6 protocol stacks,
+IP routing tables, firewall rules, the
+.I /proc/net
+directory (which is a symbolic link to
+.IR /proc/PID/net ),
+the
+.I /sys/class/net
+directory, various files under
+.IR /proc/sys/net ,
+port numbers (sockets), and so on.
+In addition,
+network namespaces isolate the UNIX domain abstract socket namespace (see
+.BR unix (7)).
+.PP
+A physical network device can live in exactly one
+network namespace.
+When a network namespace is freed
+(i.e., when the last process in the namespace terminates),
+its physical network devices are moved back to the
+initial network namespace (not to the parent of the process).
+.PP
+A virtual network
+.RB ( veth (4))
+device pair provides a pipe-like abstraction
+that can be used to create tunnels between network namespaces,
+and can be used to create a bridge to a physical network device
+in another namespace.
+When a namespace is freed, the
+.BR veth (4)
+devices that it contains are destroyed.
+.PP
+Use of network namespaces requires a kernel that is configured with the
+.B CONFIG_NET_NS
+option.
+.\" FIXME .SH EXAMPLE
+.SH SEE ALSO
+.BR nsenter (1),
+.BR unshare (1),
+.BR clone (2),
+.BR veth (4),
+.BR proc (5),
+.BR sysfs (5),
+.BR namespaces (7),
+.BR user_namespaces (7),
+.BR brctl (8),
+.BR ip (8),
+.BR ip-address (8),
+.BR ip-link (8),
+.BR ip-netns (8),
+.BR iptables (8),
+.BR ovs-vsctl (8)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.
