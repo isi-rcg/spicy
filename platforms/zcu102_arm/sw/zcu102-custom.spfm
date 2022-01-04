@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdx:platform sdx:vendor="xilinx.com"
+              sdx:library="sdx"
+              sdx:name="zcu102-custom"
+              sdx:version="1.0"
+              sdx:schemaVersion="1.0"
+              xmlns:sdx="http://www.xilinx.com/sdx">
+    <sdx:description>
+zcu102-custom
+    </sdx:description>
+    <sdx:systemConfigurations sdx:defaultConfiguration="zcu102-custom">
+        <sdx:configuration sdx:name="zcu102-custom"
+                           sdx:displayName="zcu102-custom"
+                           sdx:defaultProcessorGroup="Linux"
+                           sdx:runtimes="ocl">
+            <sdx:description>zcu102-custom</sdx:description>
+            <sdx:bootImages sdx:default="standard">
+                <sdx:image sdx:name="standard"
+                            sdx:bif="zcu102-custom/boot/linux.bif"
+                            sdx:imageData="zcu102-custom/Linux/image"
+                            sdx:bootmode="sd"
+                            sdx:mountPath="/mnt"
+                            sdx:readme="zcu102-custom/boot/generic.readme"
+                            sdx:qemuArguments="zcu102-custom/qemu/pmu_args.txt:zcu102-custom/qemu/qemu_args.txt"
+                            />
+                <sdx:image sdx:name="standalone_domain"
+                            sdx:bif="zcu102-custom/boot/linux.bif"
+                            sdx:imageData="zcu102-custom/Linux/image"
+                            sdx:mountPath="/mnt"
+                            sdx:readme="zcu102-custom/boot/generic.readme"
+                            sdx:qemuArguments="zcu102-custom/standalone_domain/qemu/pmu_args.txt:zcu102-custom/standalone_domain/qemu/qemu_args.txt"
+                            />
+                <sdx:image sdx:name="Linux"
+                            sdx:bif="zcu102-custom/boot/linux.bif"
+                            sdx:imageData="zcu102-custom/Linux/image"
+                            sdx:mountPath="/mnt"
+                            sdx:readme="zcu102-custom/boot/generic.readme"
+                            sdx:qemuArguments="zcu102-custom/Linux/qemu/pmu_args.txt:zcu102-custom/Linux/qemu/qemu_args.txt"
+                            />
+            </sdx:bootImages>
+            <sdx:processorGroup sdx:name="standalone_domain"
+                                sdx:displayName="standalone on psu_cortexa53_0"
+                                sdx:cpuType="cortex-a53"
+                                sdx:cpuInstance="psu_cortexa53_0">
+                <sdx:os sdx:name="standalone"
+                        sdx:displayName="standalone"
+                        sdx:bspLibraryPaths="zcu102-custom/standalone_domain/bsplib/lib"
+                        sdx:bspIncludePaths="zcu102-custom/standalone_domain/bspinclude/include"
+                        sdx:bspConfig="zcu102-custom/standalone_domain/system.mss"
+                />
+            </sdx:processorGroup>
+            <sdx:processorGroup sdx:name="Linux"
+                                sdx:displayName="Linux"
+                                sdx:cpuType="cortex-a53">
+                <sdx:os sdx:name="linux"
+                        sdx:displayName="linux"
+                />
+            </sdx:processorGroup>
+        </sdx:configuration>
+    </sdx:systemConfigurations>
+</sdx:platform>

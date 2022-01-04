@@ -1,0 +1,66 @@
+# selects emulated machine
+-M
+arm-generic-fdt
+#
+#
+# redirect the serial port to specified char dev (i.e stdio, tcp port, file etc)
+-serial
+mon:stdio
+#
+#
+# Make the specified cpu come out of reset (ZynqMP specific)
+-global
+xlnx,zynqmp-boot.cpu-num=0
+#
+#
+# Handovers static pmc config data to pmufw  (ZynqMP specific)
+-global
+xlnx,zynqmp-boot.use-pmufw=true
+#
+#
+# initialize network interface gem0
+-net
+nic
+#
+#
+# initialize network interface gem1
+-net
+nic
+#
+#
+# initialize network interface gem2
+-net
+nic
+#
+#
+# initialize network interface gem3
+-net
+nic
+#
+#
+# Connect the previous mentioned network adaptor to user mode network
+-net
+user
+#
+#
+# Mention the ddr size according to support ddr address space
+-m
+4G
+#
+#
+# Load bl31 elf file on A53 core 0
+-device
+loader,file=/stereobit/boards/zcu102/zcu102_custom_pkg/pfm/boot/bl31.elf,cpu-num=0
+#
+#
+# Loading u-boot.elf
+-device
+loader,file=/stereobit/boards/zcu102/zcu102_custom_pkg/pfm/boot/u-boot.elf
+#
+#
+# Dtb file which describes PS which is emulated by QEMU can be specifed using -hw-dtb
+# (By default Vitis tool provides standard dtb, But user can specify dtb).
+#-hw-dtb
+#<path-to-ps-dtb>
+-boot
+mode=5
