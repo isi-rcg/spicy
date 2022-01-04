@@ -1,0 +1,259 @@
+.\" This manpage is Copyright (C) 1992 Drew Eckhardt;
+.\" and Copyright (C) 1993 Michael Haardt, Ian Jackson.
+.\" and Copyright (C) 2016 Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.\" Modified Wed Jul 21 22:40:25 1993 by Rik Faith <faith@cs.unc.edu>
+.\" Modified Sat Feb 18 15:27:48 1995 by Michael Haardt
+.\" Modified Sun Apr 14 11:40:50 1996 by Andries Brouwer <aeb@cwi.nl>:
+.\"   corrected description of effect on locks (thanks to
+.\"   Tigran Aivazian <tigran@sco.com>).
+.\" Modified Fri Jan 31 16:21:46 1997 by Eric S. Raymond <esr@thyrsus.com>
+.\" Modified 2000-07-22 by Nicolás Lichtmaier <nick@debian.org>
+.\"   added note about close(2) not guaranteeing that data is safe on close.
+.\"
+.TH CLOSE 2 2017-09-15 "Linux" "Linux Programmer's Manual"
+.SH NAME
+close \- close a file descriptor
+.SH SYNOPSIS
+.nf
+.B #include <unistd.h>
+.PP
+.BI "int close(int " fd );
+.fi
+.SH DESCRIPTION
+.BR close ()
+closes a file descriptor, so that it no longer refers to any file and
+may be reused.
+Any record locks (see
+.BR fcntl (2))
+held on the file it was associated with,
+and owned by the process, are removed (regardless of the file
+descriptor that was used to obtain the lock).
+.PP
+If
+.I fd
+is the last file descriptor referring to the underlying
+open file description (see
+.BR open (2)),
+the resources associated with the open file description are freed;
+if the file descriptor was the last reference to a file which has been
+removed using
+.BR unlink (2),
+the file is deleted.
+.SH RETURN VALUE
+.BR close ()
+returns zero on success.
+On error, \-1 is returned, and
+.I errno
+is set appropriately.
+.SH ERRORS
+.TP
+.B EBADF
+.I fd
+isn't a valid open file descriptor.
+.TP
+.B EINTR
+.\" Though, it's in doubt whether this error can ever occur; see
+.\" https://lwn.net/Articles/576478/ "Returning EINTR from close()"
+The
+.BR close ()
+call was interrupted by a signal; see
+.BR signal (7).
+.TP
+.B EIO
+An I/O error occurred.
+.TP
+.BR ENOSPC ", " EDQUOT
+On NFS, these errors are not normally reported against the first write
+which exceeds the available storage space, but instead against a
+subsequent
+.BR write (2),
+.BR fsync (2),
+or
+.BR close (2).
+.PP
+See NOTES for a discussion of why
+.BR close ()
+should not be retried after an error.
+.SH CONFORMING TO
+POSIX.1-2001, POSIX.1-2008, SVr4, 4.3BSD.
+.\" SVr4 documents an additional ENOLINK error condition.
+.SH NOTES
+A successful close does not guarantee that the data has been successfully
+saved to disk, as the kernel uses the buffer cache to defer writes.
+Typically, filesystems do not flush buffers when a file is closed.
+If you need to be sure that
+the data is physically stored on the underlying disk, use
+.BR fsync (2).
+(It will depend on the disk hardware at this point.)
+.PP
+The close-on-exec file descriptor flag can be used to ensure
+that a file descriptor is automatically closed upon a successful
+.BR execve (2);
+see
+.BR fcntl (2)
+for details.
+.PP
+It is probably unwise to close file descriptors while
+they may be in use by system calls in
+other threads in the same process.
+Since a file descriptor may be reused,
+there are some obscure race conditions
+that may cause unintended side effects.
+.\" Date: Tue, 4 Sep 2007 13:57:35 +0200
+.\" From: Fredrik Noring <noring@nocrew.org>
+.\" One such race involves signals and ERESTARTSYS. If a file descriptor
+.\" in use by a system call is closed and then reused by e.g. an
+.\" independent open() in some unrelated thread, before the original system
+.\" call has restarted after ERESTARTSYS, the original system call will
+.\" later restart with the reused file descriptor. This is most likely a
+.\" serious programming error.
+.\"
+.SS Dealing with error returns from close()
+A careful programmer will check the return value of
+.BR close (),
+since it is quite possible that errors on a previous
+.BR write (2)
+operation are reported only on the final
+.BR close ()
+that releases the open file description.
+Failing to check the return value when closing a file may lead to
+.I silent
+loss of data.
+This can especially be observed with NFS and with disk quota.
+.PP
+Note, however, that a failure return should be used only for
+diagnostic purposes (i.e., a warning to the application that there
+may still be I/O pending or there may have been failed I/O)
+or remedial purposes
+(e.g., writing the file once more or creating a backup).
+.PP
+Retrying the
+.BR close ()
+after a failure return is the wrong thing to do,
+.\" The file descriptor is released early in close();
+.\" close() ==> __close_fd():
+.\"			__put_unused_fd() ==> __clear_open_fd()
+.\"			return filp_close(file, files);
+.\"
+.\" The errors are returned by filp_close() after the FD has been
+.\" cleared for re-use.
+since this may cause a reused file descriptor
+from another thread to be closed.
+This can occur because the Linux kernel
+.I always
+releases the file descriptor early in the close
+operation, freeing it for reuse;
+the steps that may return an error,
+.\" filp_close()
+such as flushing data to the filesystem or device,
+occur only later in the close operation.
+.PP
+Many other implementations similarly always close the file descriptor
+.\" FreeBSD documents this explicitly. From the look of the source code
+.\" SVR4, ancient SunOS, later Solaris, and AIX all do this.
+(except in the case of
+.BR EBADF ,
+meaning that the file descriptor was invalid)
+even if they subsequently report an error on return from
+.BR close ().
+POSIX.1 is currently silent on this point,
+but there are plans to mandate this behavior in the next major release
+.\" Issue 8
+of the standard.
+.PP
+A careful programmer who wants to know about I/O errors may precede
+.BR close ()
+with a call to
+.BR fsync (2).
+.PP
+The
+.B EINTR
+error is a somewhat special case.
+Regarding the
+.B EINTR
+error, POSIX.1-2013 says:
+.PP
+.RS
+If
+.BR close ()
+is interrupted by a signal that is to be caught, it shall return \-1 with
+.I errno
+set to
+.B EINTR
+and the state of
+.I fildes
+is unspecified.
+.RE
+.PP
+This permits the behavior that occurs on Linux and
+many other implementations, where,
+as with other errors that may be reported by
+.BR close (),
+the file descriptor is guaranteed to be closed.
+However, it also permits another possibility:
+that the implementation returns an
+.B EINTR
+error and keeps the file descriptor open.
+(According to its documentation, HP-UX's
+.BR close ()
+does this.)
+The caller must then once more use
+.BR close ()
+to close the file descriptor, to avoid file descriptor leaks.
+This divergence in implementation behaviors provides
+a difficult hurdle for portable applications, since on many implementations,
+.BR close ()
+must not be called again after an
+.B EINTR
+error, and on at least one,
+.BR close ()
+must be called again.
+There are plans to address this conundrum for
+the next major release of the POSIX.1 standard.
+.\" FIXME . for later review when Issue 8 is one day released...
+.\" POSIX proposes further changes for EINTR
+.\" http://austingroupbugs.net/tag_view_page.php?tag_id=8
+.\" http://austingroupbugs.net/view.php?id=529
+.\"
+.\" FIXME .
+.\" Review the following glibc bug later
+.\" https://sourceware.org/bugzilla/show_bug.cgi?id=14627
+.SH SEE ALSO
+.BR fcntl (2),
+.BR fsync (2),
+.BR open (2),
+.BR shutdown (2),
+.BR unlink (2),
+.BR fclose (3)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

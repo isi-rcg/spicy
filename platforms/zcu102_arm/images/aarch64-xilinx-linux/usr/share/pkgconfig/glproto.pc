@@ -1,0 +1,8 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+ 
+Name: GLProto
+Description: GL extension headers
+Version: 1.4.17
+Cflags: -I${includedir}

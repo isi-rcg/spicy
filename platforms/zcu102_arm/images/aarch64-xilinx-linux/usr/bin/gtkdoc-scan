@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+# -*- python -*-
+#
+# gtk-doc - GTK DocBook documentation generator.
+# Copyright (C) 1998  Damon Chaplin
+#               2007-2016  Stefan Sauer
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+
+from __future__ import print_function
+
+import argparse
+import sys
+sys.path.append('/usr/share/gtk-doc/python')
+
+from gtkdoc import common, config, scan
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='gtkdoc-scan version %s - scan header files for public symbols' % config.version)
+    parser.add_argument('--version', action='version', version=config.version)
+    parser.add_argument('--module', required=True,
+                        help='Name of the doc module being processed.')
+    parser.add_argument('--source-dir', action='append', default=[],
+                        help='Directories containing the source files to scan')
+    parser.add_argument('--ignore-headers', default='',
+                        help='A space-separated list of header files/dirs not to scan')
+    parser.add_argument('--output-dir', default='.',
+                        help='The directory where the results are stored')
+    parser.add_argument('--deprecated-guards', default='does_not_match_any_cpp_symbols_at_all_nope',
+                        help='A |-separated list of symbols used as deprecation guards')
+    parser.add_argument('--ignore-decorators', default='(?=no)match',
+                        help='A |-separated list of additional decorators in'
+                        'declarations that should be ignored')
+    parser.add_argument('--rebuild-sections', action='store_true', default=False,
+                        help='Rebuild (overwrite) the MODULE-sections.txt file')
+    parser.add_argument('--rebuild-types', action='store_true', default=False,
+                        help='Automatically recreate the MODULE.types file using'
+                        'all the *_get_type() functions found')
+    parser.add_argument('headers', nargs='*')
+
+    options = parser.parse_args()
+
+    common.setup_logging()
+
+    scan.Run(options)

@@ -1,0 +1,304 @@
+.\" Copyright (C) 2006 Red Hat, Inc. All Rights Reserved.
+.\"     Written by David Howells (dhowells@redhat.com)
+.\" and Copyright (C) 2016 Michael Kerrisk <mtk.man-pages@gmail.com>
+.\"
+.\" %%%LICENSE_START(GPLv2+_SW_ONEPARA)
+.\" This program is free software; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License
+.\" as published by the Free Software Foundation; either version
+.\" 2 of the License, or (at your option) any later version.
+.\" %%%LICENSE_END
+.\"
+.TH ADD_KEY 2 2019-03-06 Linux "Linux Key Management Calls"
+.SH NAME
+add_key \- add a key to the kernel's key management facility
+.SH SYNOPSIS
+.nf
+.B #include <sys/types.h>
+.B #include <keyutils.h>
+.PP
+.BI "key_serial_t add_key(const char *" type ", const char *" description ,
+.BI "                     const void *" payload ", size_t " plen ,
+.BI "                     key_serial_t " keyring ");"
+.fi
+.PP
+No glibc wrapper is provided for this system call; see NOTES.
+.SH DESCRIPTION
+.BR add_key ()
+creates or updates a key of the given
+.I type
+and
+.IR description ,
+instantiates it with the
+.I payload
+of length
+.IR plen ,
+attaches it to the nominated
+.IR keyring ,
+and returns the key's serial number.
+.PP
+The key may be rejected if the provided data is in the wrong format or
+it is invalid in some other way.
+.PP
+If the destination
+.I keyring
+already contains a key that matches the specified
+.IR type
+and
+.IR description ,
+then, if the key type supports it,
+.\" FIXME The aforementioned phrases begs the question:
+.\" which key types support this?
+that key will be updated rather than a new key being created;
+if not, a new key (with a different ID) will be created
+and it will displace the link to the extant key from the keyring.
+.\" FIXME Perhaps elaborate the implications here? Namely, the new
+.\" key will have a new ID, and if the old key was a keyring that
+.\" is consequently unlinked, then keys that it was anchoring
+.\" will have their reference count decreased by one (and may
+.\" consequently be garbage collected). Is this all correct?
+.PP
+The destination
+.I keyring
+serial number may be that of a valid keyring for which the caller has
+.I write
+permission.
+Alternatively, it may be one of the following special keyring IDs:
+.\" FIXME . Perhaps have a separate page describing special keyring IDs?
+.TP
+.B KEY_SPEC_THREAD_KEYRING
+This specifies the caller's thread-specific keyring
+.RB ( thread-keyring (7)).
+.TP
+.B KEY_SPEC_PROCESS_KEYRING
+This specifies the caller's process-specific keyring
+.RB ( process-keyring (7)).
+.TP
+.B KEY_SPEC_SESSION_KEYRING
+This specifies the caller's session-specific keyring
+.RB ( session-keyring (7)).
+.TP
+.B KEY_SPEC_USER_KEYRING
+This specifies the caller's UID-specific keyring
+.RB ( user-keyring (7)).
+.TP
+.B KEY_SPEC_USER_SESSION_KEYRING
+This specifies the caller's UID-session keyring
+.RB ( user-session-keyring (7)).
+.SS Key types
+The key
+.I type
+is a string that specifies the key's type.
+Internally, the kernel defines a number of key types that are
+available in the core key management code.
+Among the types that are available for user-space use
+and can be specified as the
+.I type
+argument to
+.BR add_key ()
+are the following:
+.TP
+.I """keyring"""
+Keyrings are special key types that may contain links to sequences of other
+keys of any type.
+If this interface is used to create a keyring, then
+.I payload
+should be NULL and
+.I plen
+should be zero.
+.TP
+.IR """user"""
+This is a general purpose key type whose payload may be read and updated
+by user-space applications.
+The key is kept entirely within kernel memory.
+The payload for keys of this type is a blob of arbitrary data
+of up to 32,767 bytes.
+.TP
+.IR """logon""" " (since Linux 3.3)"
+.\" commit 9f6ed2ca257fa8650b876377833e6f14e272848b
+This key type is essentially the same as
+.IR """user""" ,
+but it does not permit the key to read.
+This is suitable for storing payloads
+that you do not want to be readable from user space.
+.PP
+This key type vets the
+.I description
+to ensure that it is qualified by a "service" prefix,
+by checking to ensure that the
+.I description
+contains a ':' that is preceded by other characters.
+.TP
+.IR """big_key""" " (since Linux 3.13)"
+.\" commit ab3c3587f8cda9083209a61dbe3a4407d3cada10
+This key type is similar to
+.IR """user""" ,
+but may hold a payload of up to 1\ MiB.
+If the key payload is large enough,
+then it may be stored encrypted in tmpfs
+(which can be swapped out) rather than kernel memory.
+.PP
+For further details on these key types, see
+.BR keyrings (7).
+.SH RETURN VALUE
+On success,
+.BR add_key ()
+returns the serial number of the key it created or updated.
+On error, \-1 is returned and
+.I errno
+is set to indicate the cause of the error.
+.SH ERRORS
+.TP
+.B EACCES
+The keyring wasn't available for modification by the user.
+.TP
+.B EDQUOT
+The key quota for this user would be exceeded by creating this key or linking
+it to the keyring.
+.TP
+.B EFAULT
+One or more of
+.IR type ,
+.IR description ,
+and
+.I payload
+points outside process's accessible address space.
+.TP
+.B EINVAL
+The size of the string (including the terminating null byte) specified in
+.I type
+or
+.I description
+exceeded the limit (32 bytes and 4096 bytes respectively).
+.TP
+.B EINVAL
+The payload data was invalid.
+.TP
+.B EINVAL
+.IR type
+was
+.IR """logon"""
+and the
+.I description
+was not qualified with a prefix string of the form
+.IR """service:""" .
+.TP
+.B EKEYEXPIRED
+The keyring has expired.
+.TP
+.B EKEYREVOKED
+The keyring has been revoked.
+.TP
+.B ENOKEY
+The keyring doesn't exist.
+.TP
+.B ENOMEM
+Insufficient memory to create a key.
+.TP
+.B EPERM
+The
+.I type
+started with a period (\(aq.\(aq).
+Key types that begin with a period are reserved to the implementation.
+.TP
+.B EPERM
+.I type
+was
+.I """keyring"""
+and the
+.I description
+started with a period (\(aq.\(aq).
+Keyrings with descriptions (names)
+that begin with a period are reserved to the implementation.
+.SH VERSIONS
+This system call first appeared in Linux 2.6.10.
+.SH CONFORMING TO
+This system call is a nonstandard Linux extension.
+.SH NOTES
+No wrapper for this system call is provided in glibc.
+A wrapper is provided in the
+.IR libkeyutils
+package.
+When employing the wrapper in that library, link with
+.IR \-lkeyutils .
+.SH EXAMPLE
+The program below creates a key with the type, description, and payload
+specified in its command-line arguments,
+and links that key into the session keyring.
+The following shell session demonstrates the use of the program:
+.PP
+.in +4n
+.EX
+$ \fB./a.out user mykey "Some payload"\fP
+Key ID is 64a4dca
+$ \fBgrep \(aq64a4dca\(aq /proc/keys\fP
+064a4dca I--Q---    1 perm 3f010000  1000  1000 user    mykey: 12
+.EE
+.in
+.SS Program source
+\&
+.EX
+#include <sys/types.h>
+#include <keyutils.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int
+main(int argc, char *argv[])
+{
+    key_serial_t key;
+
+    if (argc != 4) {
+        fprintf(stderr, "Usage: %s type description payload\en",
+                argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    key = add_key(argv[1], argv[2], argv[3], strlen(argv[3]),
+                KEY_SPEC_SESSION_KEYRING);
+    if (key == \-1) {
+        perror("add_key");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Key ID is %lx\en", (long) key);
+
+    exit(EXIT_SUCCESS);
+}
+.EE
+.SH SEE ALSO
+.ad l
+.nh
+.BR keyctl (1),
+.BR keyctl (2),
+.BR request_key (2),
+.BR keyctl (3),
+.BR keyrings (7),
+.BR keyutils (7),
+.BR persistent\-keyring (7),
+.BR process\-keyring (7),
+.BR session\-keyring (7),
+.BR thread\-keyring (7),
+.BR user\-keyring (7),
+.BR user\-session\-keyring (7)
+.PP
+The kernel source files
+.IR Documentation/security/keys/core.rst
+and
+.IR Documentation/keys/request\-key.rst
+(or, before Linux 4.13, in the files
+.\" commit b68101a1e8f0263dbc7b8375d2a7c57c6216fb76
+.IR Documentation/security/keys.txt
+and
+.\" commit 3db38ed76890565772fcca3279cc8d454ea6176b
+.IR Documentation/security/keys\-request\-key.txt ).
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

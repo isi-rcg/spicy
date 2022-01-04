@@ -1,0 +1,8 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+ 
+Name: WindowsWMProto
+Description: WindowsWM extension headers
+Version: 1.0.4
+Cflags: -I${includedir}

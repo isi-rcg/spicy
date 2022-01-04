@@ -1,0 +1,904 @@
+.\" Copyright (C) 1993 Rickard E. Faith <faith@cs.unc.edu>
+.\" and Copyright (C) 1994 Andries E. Brouwer <aeb@cwi.nl>
+.\" and Copyright (C) 2002, 2005, 2016 Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.\" Modified 1996-11-04 by Eric S. Raymond <esr@thyrsus.com>
+.\" Modified 2001-10-13 by Michael Kerrisk <mtk.manpages@gmail.com>
+.\"	Added note on historical behavior of MS_NOSUID
+.\" Modified 2002-05-16 by Michael Kerrisk <mtk.manpages@gmail.com>
+.\"	Extensive changes and additions
+.\" Modified 2002-05-27 by aeb
+.\" Modified 2002-06-11 by Michael Kerrisk <mtk.manpages@gmail.com>
+.\"	Enhanced descriptions of MS_MOVE, MS_BIND, and MS_REMOUNT
+.\" Modified 2004-06-17 by Michael Kerrisk <mtk.manpages@gmail.com>
+.\" 2005-05-18, mtk, Added MNT_EXPIRE, plus a few other tidy-ups.
+.\" 2008-10-06, mtk: move umount*() material into separate umount.2 page.
+.\" 2008-10-06, mtk: Add discussion of namespaces.
+.\"
+.TH MOUNT 2 2019-03-06 "Linux" "Linux Programmer's Manual"
+.SH NAME
+mount \- mount filesystem
+.SH SYNOPSIS
+.nf
+.B "#include <sys/mount.h>"
+.PP
+.BI "int mount(const char *" source ", const char *" target ,
+.BI "          const char *" filesystemtype ", unsigned long " mountflags ,
+.BI "          const void *" data );
+.fi
+.SH DESCRIPTION
+.BR mount ()
+attaches the filesystem specified by
+.I source
+(which is often a pathname referring to a device,
+but can also be the pathname of a directory or file,
+or a dummy string) to the location (a directory or file)
+specified by the pathname in
+.IR target .
+.PP
+Appropriate privilege (Linux: the
+.B CAP_SYS_ADMIN
+capability) is required to mount filesystems.
+.PP
+Values for the
+.I filesystemtype
+argument supported by the kernel are listed in
+.I /proc/filesystems
+(e.g., "btrfs", "ext4", "jfs", "xfs", "vfat", "fuse",
+"tmpfs", "cgroup", "proc", "mqueue", "nfs", "cifs", "iso9660").
+Further types may become available when the appropriate modules
+are loaded.
+.PP
+The
+.I data
+argument is interpreted by the different filesystems.
+Typically it is a string of comma-separated options
+understood by this filesystem.
+See
+.BR mount (8)
+for details of the options available for each filesystem type.
+.PP
+A call to
+.BR mount ()
+performs one of a number of general types of operation,
+depending on the bits specified in
+.IR mountflags .
+The choice of which operation to perform is determined by
+testing the bits set in
+.IR mountflags ,
+with the tests being conducted in the order listed here:
+.IP * 3
+Remount an existing mount:
+.IR mountflags
+includes
+.BR MS_REMOUNT .
+.IP *
+Create a bind mount:
+.IR mountflags
+includes
+.BR MS_BIND .
+.IP *
+Change the propagation type of an existing mount:
+.IR mountflags
+includes one of
+.BR MS_SHARED ,
+.BR MS_PRIVATE ,
+.BR MS_SLAVE ,
+or
+.BR MS_UNBINDABLE .
+.IP *
+Move an existing mount to a new location:
+.IR mountflags
+includes
+.BR MS_MOVE .
+.IP *
+Create a new mount:
+.IR mountflags
+includes none of the above flags.
+.PP
+Each of these operations is detailed later in this page.
+Further flags may be specified in
+.IR mountflags
+to modify the behavior of
+.BR mount (),
+as described below.
+.\"
+.SS Additional mount flags
+The list below describes the additional flags that can be specified in
+.IR mountflags .
+Note that some operation types ignore some or all of these flags,
+as described later in this page.
+.\"
+.\" FIXME 2.6.25 Added MS_I_VERSION, which needs to be documented.
+.\" commit 7a224228ed79d587ece2304869000aad1b8e97dd
+.\" (This is a per-superblock flag)
+.\"
+.TP
+.BR MS_DIRSYNC " (since Linux 2.5.19)"
+Make directory changes on this filesystem synchronous.
+(This property can be obtained for individual directories
+or subtrees using
+.BR chattr (1).)
+.TP
+.BR MS_LAZYTIME " (since Linux 4.0)"
+.\" commit 0ae45f63d4ef8d8eeec49c7d8b44a1775fff13e8
+.\" commit fe032c422c5ba562ba9c2d316f55e258e03259c6
+.\" commit a26f49926da938f47561f386be56a83dd37a496d
+Reduce on-disk updates of inode timestamps (atime, mtime, ctime)
+by maintaining these changes only in memory.
+The on-disk timestamps are updated only when:
+.RS
+.IP (a) 5
+the inode needs to be updated for some change unrelated to file timestamps;
+.IP (b)
+the application employs
+.BR fsync (2),
+.BR syncfs (2),
+or
+.BR sync (2);
+.IP (c)
+an undeleted inode is evicted from memory; or
+.IP (d)
+more than 24 hours have passed since the inode was written to disk.
+.RE
+.IP
+This mount option significantly reduces writes
+needed to update the inode's timestamps, especially mtime and atime.
+However, in the event of a system crash, the atime and mtime fields
+on disk might be out of date by up to 24 hours.
+.IP
+Examples of workloads where this option could be of significant benefit
+include frequent random writes to preallocated files,
+as well as cases where the
+.B MS_STRICTATIME
+mount option is also enabled.
+(The advantage of combining
+.BR MS_STRICTATIME
+and
+.BR MS_LAZYTIME
+is that
+.BR stat (2)
+will return the correctly updated atime, but the atime updates
+will be flushed to disk only in the cases listed above.)
+.TP
+.B MS_MANDLOCK
+Permit mandatory locking on files in this filesystem.
+(Mandatory locking must still be enabled on a per-file basis,
+as described in
+.BR fcntl (2).)
+Since Linux 4.5,
+.\" commit 95ace75414f312f9a7b93d873f386987b92a5301
+this mount option requires the
+.B CAP_SYS_ADMIN
+capability and a kernel configured with the
+.B CONFIG_MANDATORY_FILE_LOCKING
+option.
+.TP
+.B MS_NOATIME
+Do not update access times for (all types of) files on this filesystem.
+.TP
+.B MS_NODEV
+Do not allow access to devices (special files) on this filesystem.
+.TP
+.B MS_NODIRATIME
+Do not update access times for directories on this filesystem.
+This flag provides a subset of the functionality provided by
+.BR MS_NOATIME ;
+that is,
+.BR MS_NOATIME
+implies
+.BR MS_NODIRATIME .
+.TP
+.B MS_NOEXEC
+Do not allow programs to be executed from this filesystem.
+.\" (Possibly useful for a filesystem that contains non-Linux executables.
+.\" Often used as a security feature, e.g., to make sure that restricted
+.\" users cannot execute files uploaded using ftp or so.)
+.TP
+.B MS_NOSUID
+Do not honor set-user-ID and set-group-ID bits or file capabilities
+when executing programs from this filesystem.
+.\" (This is a security feature to prevent users executing set-user-ID and
+.\" set-group-ID programs from removable disk devices.)
+.TP
+.B MS_RDONLY
+Mount filesystem read-only.
+.TP
+.BR MS_REC " (since Linux 2.4.11)"
+Used in conjunction with
+.BR MS_BIND
+to create a recursive bind mount,
+and in conjunction with the propagation type flags to recursively change
+the propagation type of all of the mounts in a subtree.
+See below for further details.
+.TP
+.BR MS_RELATIME " (since Linux 2.6.20)"
+When a file on this filesystem is accessed,
+update the file's last access time (atime) only if the current value
+of atime is less than or equal to the file's last modification time (mtime)
+or last status change time (ctime).
+This option is useful for programs, such as
+.BR mutt (1),
+that need to know when a file has been read since it was last modified.
+Since Linux 2.6.30, the kernel defaults to the behavior provided
+by this flag (unless
+.BR MS_NOATIME
+was specified), and the
+.B MS_STRICTATIME
+flag is required to obtain traditional semantics.
+In addition, since Linux 2.6.30,
+the file's last access time is always updated if it
+is more than 1 day old.
+.\" Matthew Garrett notes in the patch that added this behavior
+.\" that this lets utilities such as tmpreaper (which deletes
+.\" files based on last access time) work correctly.
+.TP
+.BR MS_SILENT " (since Linux 2.6.17)"
+Suppress the display of certain
+.RI ( printk ())
+warning messages in the kernel log.
+This flag supersedes the misnamed and obsolete
+.BR MS_VERBOSE
+flag (available since Linux 2.4.12), which has the same meaning.
+.TP
+.BR MS_STRICTATIME " (since Linux 2.6.30)"
+Always update the last access time (atime) when files on this
+filesystem are accessed.
+(This was the default behavior before Linux 2.6.30.)
+Specifying this flag overrides the effect of setting the
+.BR MS_NOATIME
+and
+.BR MS_RELATIME
+flags.
+.TP
+.B MS_SYNCHRONOUS
+Make writes on this filesystem synchronous (as though
+the
+.B O_SYNC
+flag to
+.BR open (2)
+was specified for all file opens to this filesystem).
+.PP
+From Linux 2.4 onward, some of the above flags are
+settable on a per-mount basis,
+while others apply to the superblock of the mounted filesystem,
+meaning that all mounts of the same filesystem share those flags.
+(Previously, all of the flags were per-superblock.)
+.PP
+The per-mount-point flags are as follows:
+.IP * 3
+Since Linux 2.4:
+.BR MS_NODEV ", " MS_NOEXEC ", and " MS_NOSUID
+flags are settable on a per-mount-point basis.
+.IP *
+Since Linux 2.6.16:
+.B MS_NOATIME
+and
+.BR MS_NODIRATIME .
+.IP *
+Since Linux 2.6.20:
+.BR MS_RELATIME .
+.PP
+The following flags are per-superblock:
+.BR MS_DIRSYNC ,
+.BR MS_LAZYTIME ,
+.BR MS_MANDLOCK ,
+.BR MS_MS_SILENT ,
+and
+.BR MS_SYNCHRONOUS .
+.\" And MS_I_VERSION?
+The initial settings of these flags are determined on the first
+mount of the filesystem, and will be shared by all subsequent mounts
+of the same filesystem.
+Subsequently, the settings of the flags can be changed
+via a remount operation (see below).
+Such changes will be visible via all mount points associated
+with the filesystem.
+.PP
+Since Linux 2.6.16,
+.B MS_RDONLY
+can be set or cleared on a per-mount-point basis as well as on
+the underlying filesystem superblock.
+The mounted filesystem will be writable only if neither the filesystem
+nor the mountpoint are flagged as read-only.
+.\"
+.SS Remounting an existing mount
+An existing mount may be remounted by specifying
+.B MS_REMOUNT
+in
+.IR mountflags .
+This allows you to change the
+.I mountflags
+and
+.I data
+of an existing mount without having to unmount and remount the filesystem.
+.I target
+should be the same value specified in the initial
+.BR mount ()
+call.
+.PP
+The
+.I source
+and
+.I filesystemtype
+arguments are ignored.
+.PP
+The
+.I mountflags
+and
+.I data
+arguments should match the values used in the original
+.BR mount ()
+call, except for those parameters that are being deliberately changed.
+.PP
+The following
+.I mountflags
+can be changed:
+.BR MS_LAZYTIME ,
+.\" FIXME
+.\" MS_LAZYTIME seems to be available only on a few filesystems,
+.\" and on ext4, it seems (from experiment that this flag
+.\" can only be enabled (but not disabled) on a remount.
+.\" The following code in ext4_remount() (kernel 4.17) seems to
+.\" confirm this:
+.\"
+.\"        if (*flags & SB_LAZYTIME)
+.\"                sb->s_flags |= SB_LAZYTIME;
+.BR MS_MANDLOCK ,
+.BR MS_NOATIME ,
+.BR MS_NODEV ,
+.BR MS_NODIRATIME ,
+.BR MS_NOEXEC ,
+.BR MS_NOSUID ,
+.BR MS_RELATIME ,
+.BR MS_RDONLY ,
+.BR MS_STRICTATIME
+(whose effect is to clear the
+.BR MS_NOATIME
+and
+.BR MS_RELATIME
+flags),
+and
+.BR MS_SYNCHRONOUS .
+Attempts to change the setting of the
+.\" See the definition of MS_RMT_MASK in include/uapi/linux/fs.h,
+.\" which excludes MS_DIRSYNC and MS_SILENT, although SB_DIRSYNC
+.\" and SB_SILENT are split out as per-superblock flags in do_mount()
+.\" (Linux 4.17 source code)
+.BR MS_DIRSYNC
+and
+.BR MS_SILENT
+flags during a remount are silently ignored.
+Note that changes to per-superblock flags are visible via
+all mount points of the associated filesystem
+(because the per-superblock flags are shared by all mount points).
+.PP
+Since Linux 3.17,
+.\" commit ffbc6f0ead47fa5a1dc9642b0331cb75c20a640e
+if none of
+.BR MS_NOATIME ,
+.BR MS_NODIRATIME ,
+.BR MS_RELATIME ,
+or
+.BR MS_STRICTATIME
+is specified in
+.IR mountflags ,
+then the remount operation preserves the existing values of these flags
+(rather than defaulting to
+.BR MS_RELATIME ).
+.PP
+Since Linux 2.6.26, the
+.B MS_RMOUNT
+flag can be used with
+.B MS_BIND
+to modify only the per-mount-point flags.
+.\" See https://lwn.net/Articles/281157/
+This is particularly useful for setting or clearing the "read-only"
+flag on a mount point without changing the underlying filesystem.
+Specifying
+.IR mountflags
+as:
+.PP
+.in +4n
+.EX
+MS_REMOUNT | MS_BIND | MS_RDONLY
+.EE
+.in
+.PP
+will make access through this mountpoint read-only, without affecting
+other mount points.
+.\"
+.SS Creating a bind mount
+If
+.I mountflags
+includes
+.BR MS_BIND
+(available since Linux 2.4),
+.\" since 2.4.0-test9
+then perform a bind mount.
+A bind mount makes a file or a directory subtree visible at
+another point within the single directory hierarchy.
+Bind mounts may cross filesystem boundaries and span
+.BR chroot (2)
+jails.
+.PP
+The
+.IR filesystemtype
+and
+.IR data
+arguments are ignored.
+.PP
+The remaining bits (other than
+.BR MS_REC ,
+described below) in the
+.I mountflags
+argument are also ignored.
+(The bind mount has the same mount options as
+the underlying mount point.)
+However, see the discussion of remounting above,
+for a method of making an existing bind mount read-only.
+.PP
+By default, when a directory is bind mounted,
+only that directory is mounted;
+if there are any submounts under the directory tree,
+they are not bind mounted.
+If the
+.BR MS_REC
+flag is also specified, then a recursive bind mount operation is performed:
+all submounts under the
+.I source
+subtree (other than unbindable mounts)
+are also bind mounted at the corresponding location in the
+.I target
+subtree.
+.\"
+.SS Changing the propagation type of an existing mount
+If
+.IR mountflags
+includes one of
+.BR MS_SHARED ,
+.BR MS_PRIVATE ,
+.BR MS_SLAVE ,
+or
+.BR MS_UNBINDABLE
+(all available since Linux 2.6.15),
+then the propagation type of an existing mount is changed.
+If more than one of these flags is specified, an error results.
+.PP
+The only other flags that can be specified while changing
+the propagation type are
+.BR MS_REC
+(described below) and
+.BR MS_SILENT
+(which is ignored).
+.PP
+The
+.IR source ,
+.IR filesystemtype ,
+and
+.IR data
+arguments are ignored.
+.PP
+The meanings of the propagation type flags are as follows:
+.TP
+.BR MS_SHARED
+Make this mount point shared.
+Mount and unmount events immediately under this mount point will propagate
+to the other mount points that are members of this mount's peer group.
+Propagation here means that the same mount or unmount will automatically
+occur under all of the other mount points in the peer group.
+Conversely, mount and unmount events that take place under
+peer mount points will propagate to this mount point.
+.TP
+.BR MS_PRIVATE
+Make this mount point private.
+Mount and unmount events do not propagate into or out of this mount point.
+.TP
+.BR MS_SLAVE
+If this is a shared mount point that is a member of a peer group
+that contains other members, convert it to a slave mount.
+If this is a shared mount point that is a member of a peer group
+that contains no other members, convert it to a private mount.
+Otherwise, the propagation type of the mount point is left unchanged.
+.IP
+When a mount point is a slave,
+mount and unmount events propagate into this mount point from
+the (master) shared peer group of which it was formerly a member.
+Mount and unmount events under this mount point do not propagate to any peer.
+.IP
+A mount point can be the slave of another peer group
+while at the same time sharing mount and unmount events
+with a peer group of which it is a member.
+.TP
+.BR MS_UNBINDABLE
+Make this mount unbindable.
+This is like a private mount,
+and in addition this mount can't be bind mounted.
+When a recursive bind mount
+.RB ( mount ()
+with the
+.BR MS_BIND
+and
+.BR MS_REC
+flags) is performed on a directory subtree,
+any unbindable mounts within the subtree are automatically pruned
+(i.e., not replicated)
+when replicating that subtree to produce the target subtree.
+.PP
+By default, changing the propagation type affects only the
+.I target
+mount point.
+If the
+.B MS_REC
+flag is also specified in
+.IR mountflags ,
+then the propagation type of all mount points under
+.IR target
+is also changed.
+.PP
+For further details regarding mount propagation types
+(including the default propagation type assigned to new mounts), see
+.BR mount_namespaces (7).
+.\"
+.SS Moving a mount
+If
+.I mountflags
+contains the flag
+.BR MS_MOVE
+(available since Linux 2.4.18),
+then move a subtree:
+.I source
+specifies an existing mount point and
+.I target
+specifies the new location to which that mount point is to be relocated.
+The move is atomic: at no point is the subtree unmounted.
+.PP
+The remaining bits in the
+.IR mountflags
+argument are ignored, as are the
+.IR filesystemtype
+and
+.IR data
+arguments.
+.\"
+.SS Creating a new mount point
+If none of
+.BR MS_REMOUNT ,
+.BR MS_BIND ,
+.BR MS_MOVE ,
+.BR MS_SHARED ,
+.BR MS_PRIVATE ,
+.BR MS_SLAVE ,
+or
+.BR MS_UNBINDABLE
+is specified in
+.IR mountflags ,
+then
+.BR mount ()
+performs its default action: creating a new mount point.
+.IR source
+specifies the source for the new mount point, and
+.IR target
+specifies the directory at which to create the mount point.
+.PP
+The
+.I filesystemtype
+and
+.I data
+arguments are employed, and further bits may be specified in
+.IR mountflags
+to modify the behavior of the call.
+.\"
+.SH RETURN VALUE
+On success, zero is returned.
+On error, \-1 is returned, and
+.I errno
+is set appropriately.
+.SH ERRORS
+The error values given below result from filesystem type independent
+errors.
+Each filesystem type may have its own special errors and its
+own special behavior.
+See the Linux kernel source code for details.
+.TP
+.B EACCES
+A component of a path was not searchable.
+(See also
+.BR path_resolution (7).)
+.TP
+.B EACCES
+Mounting a read-only filesystem was attempted without giving the
+.B MS_RDONLY
+flag.
+.IP
+The file system may be read-only for various reasons, including:
+it resides on a read-only optical disk;
+it is resides on a device with a physical switch that has been set to
+mark the device read-only;
+the filesystem implementation was compiled with read-only support;
+or errors were detected when initially mounting the filesystem,
+so that it was marked read-only
+and can't be remounted as read-write (until the errors are fixed).
+.IP
+Some filesystems instead return the error
+.BR EROFS
+on an attempt to mount a read-only filesystem.
+.TP
+.B EACCES
+The block device
+.I source
+is located on a filesystem mounted with the
+.B MS_NODEV
+option.
+.\" mtk: Probably: write permission is required for MS_BIND, with
+.\" the error EPERM if not present; CAP_DAC_OVERRIDE is required.
+.TP
+.B EBUSY
+An attempt was made to stack a new mount directly on
+top of an existing mount point that was created in this
+mount namespace with the same
+.I source
+and
+.IR target .
+.TP
+.B EBUSY
+.I source
+cannot be remounted read-only,
+because it still holds files open for writing.
+.TP
+.B EFAULT
+One of the pointer arguments points outside the user address space.
+.TP
+.B EINVAL
+.I source
+had an invalid superblock.
+.TP
+.B EINVAL
+A remount operation
+.RB ( MS_REMOUNT )
+was attempted, but
+.I source
+was not already mounted on
+.IR target .
+.TP
+.B EINVAL
+A move operation
+.RB ( MS_MOVE )
+was attempted, but
+.I source
+was not a mount point, or was \(aq/\(aq.
+.TP
+.B EINVAL
+.I mountflags
+includes more than one of
+.BR MS_SHARED ,
+.BR MS_PRIVATE ,
+.BR MS_SLAVE ,
+or
+.BR MS_UNBINDABLE .
+.TP
+.B EINVAL
+.I mountflags
+includes
+.BR MS_SHARED ,
+.BR MS_PRIVATE ,
+.BR MS_SLAVE ,
+or
+.BR MS_UNBINDABLE
+and also includes a flag other than
+.BR MS_REC
+or
+.BR MS_SILENT .
+.TP
+.BR EINVAL
+An attempt was made to bind mount an unbindable mount.
+.TP
+.BR EINVAL
+In an unprivileged mount namespace
+(i.e., a mount namespace owned by a user namespace
+that was created by an unprivileged user),
+a bind mount operation
+.RB ( MS_BIND )
+was attempted without specifying
+.RB ( MS_REC ),
+which would have revealed the filesystem tree underneath one of
+the submounts of the directory being bound.
+.TP
+.B ELOOP
+Too many links encountered during pathname resolution.
+.TP
+.B ELOOP
+A move operation was attempted, and
+.I target
+is a descendant of
+.IR source .
+.TP
+.B EMFILE
+(In case no block device is required:)
+Table of dummy devices is full.
+.TP
+.B ENAMETOOLONG
+A pathname was longer than
+.BR MAXPATHLEN .
+.TP
+.B ENODEV
+.I filesystemtype
+not configured in the kernel.
+.TP
+.B ENOENT
+A pathname was empty or had a nonexistent component.
+.TP
+.B ENOMEM
+The kernel could not allocate a free page to copy filenames or data into.
+.TP
+.B ENOTBLK
+.I source
+is not a block device (and a device was required).
+.TP
+.B ENOTDIR
+.IR target ,
+or a prefix of
+.IR source ,
+is not a directory.
+.TP
+.B ENXIO
+The major number of the block device
+.I source
+is out of range.
+.TP
+.B EPERM
+The caller does not have the required privileges.
+.TP
+.B EROFS
+Mounting a read-only filesystem was attempted without giving the
+.B MS_RDONLY
+flag.
+See
+.BR EACCES ,
+above.
+.SH VERSIONS
+The definitions of
+.BR MS_DIRSYNC ,
+.BR MS_MOVE ,
+.BR MS_PRIVATE ,
+.BR MS_REC ,
+.BR MS_RELATIME ,
+.BR MS_SHARED ,
+.BR MS_SLAVE ,
+.BR MS_STRICTATIME ,
+and
+.BR MS_UNBINDABLE
+were added to glibc headers in version 2.12.
+.\"
+.SH CONFORMING TO
+This function is Linux-specific and should not be used in
+programs intended to be portable.
+.SH NOTES
+Since Linux 2.4 a single filesystem can be mounted at
+multiple mount points, and multiple mounts can be stacked
+on the same mount point.
+.\" Multiple mounts on same mount point: since 2.3.99pre7.
+.PP
+The
+.I mountflags
+argument may have the magic number 0xC0ED (\fBMS_MGC_VAL\fP)
+in the top 16 bits.
+(All of the other flags discussed in DESCRIPTION
+occupy the low order 16 bits of
+.IR mountflags .)
+Specifying
+.BR MS_MGC_VAL
+was required in kernel versions prior to 2.4,
+but since Linux 2.4 is no longer required and is ignored if specified.
+.PP
+The original
+.B MS_SYNC
+flag was renamed
+.B MS_SYNCHRONOUS
+in 1.1.69
+when a different
+.B MS_SYNC
+was added to \fI<mman.h>\fP.
+.PP
+Before Linux 2.4 an attempt to execute a set-user-ID or set-group-ID program
+on a filesystem mounted with
+.B MS_NOSUID
+would fail with
+.BR EPERM .
+Since Linux 2.4 the set-user-ID and set-group-ID bits are
+just silently ignored in this case.
+.\" The change is in patch-2.4.0-prerelease.
+.\"
+.SS Per-process namespaces
+Starting with kernel 2.4.19, Linux provides
+per-process mount namespaces.
+A mount namespace is the set of filesystem mounts that
+are visible to a process.
+Mount-point namespaces can be (and usually are)
+shared between multiple processes,
+and changes to the namespace (i.e., mounts and unmounts) by one process
+are visible to all other processes sharing the same namespace.
+(The pre-2.4.19 Linux situation can be considered as one in which
+a single namespace was shared by every process on the system.)
+.PP
+A child process created by
+.BR fork (2)
+shares its parent's mount namespace;
+the mount namespace is preserved across an
+.BR execve (2).
+.PP
+A process can obtain a private mount namespace if:
+it was created using the
+.BR clone (2)
+.BR CLONE_NEWNS
+flag,
+in which case its new namespace is initialized to be a
+.I copy
+of the namespace of the process that called
+.BR clone (2);
+or it calls
+.BR unshare (2)
+with the
+.BR CLONE_NEWNS
+flag,
+which causes the caller's mount namespace to obtain a private copy
+of the namespace that it was previously sharing with other processes,
+so that future mounts and unmounts by the caller are invisible
+to other processes (except child processes that the caller
+subsequently creates) and vice versa.
+.PP
+The Linux-specific
+.I /proc/[pid]/mounts
+file exposes the list of mount points in the mount
+namespace of the process with the specified ID.
+The
+.I /proc/[pid]/mountinfo
+file exposes even more information about mount points,
+including the propagation type and mount ID information that makes it
+possible to discover the parental relationship between mount points.
+See
+.BR proc (5)
+and
+.BR mount_namespaces (7)
+for details of these files.
+.SH SEE ALSO
+.BR mountpoint (1),
+.BR ioctl_iflags (2),
+.BR umount (2),
+.BR mount_namespaces (7),
+.BR path_resolution (7),
+.BR findmnt (8),
+.BR lsblk (8),
+.BR mount (8),
+.BR umount (8)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

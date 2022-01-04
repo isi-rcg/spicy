@@ -1,0 +1,79 @@
+/* List the relocation types for mips.  -*- C -*-
+   Copyright (C) 2006 Red Hat, Inc.
+   This file is part of Red Hat elfutils.
+
+   Red Hat elfutils is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by the
+   Free Software Foundation; version 2 of the License.
+
+   Red Hat elfutils is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License along
+   with Red Hat elfutils; if not, write to the Free Software Foundation,
+   Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301 USA.
+
+   Red Hat elfutils is an included package of the Open Invention Network.
+   An included package of the Open Invention Network is a package for which
+   Open Invention Network licensees cross-license their patents.  No patent
+   license is granted, either expressly or impliedly, by designation as an
+   included package.  Should you wish to participate in the Open Invention
+   Network licensing program, please visit www.openinventionnetwork.com
+   <http://www.openinventionnetwork.com>.  */
+
+/* 	    NAME,		REL|EXEC|DYN	*/
+
+RELOC_TYPE (NONE,               0)
+RELOC_TYPE (16,                 0)
+RELOC_TYPE (32,                 0)
+RELOC_TYPE (REL32,              0)
+RELOC_TYPE (26,                 0)
+RELOC_TYPE (HI16,               0)
+RELOC_TYPE (LO16,               0)
+RELOC_TYPE (GPREL16,            0)
+RELOC_TYPE (LITERAL,            0)
+RELOC_TYPE (GOT16,              0)
+RELOC_TYPE (PC16,               0)
+RELOC_TYPE (CALL16,             0)
+RELOC_TYPE (GPREL32,            0)
+
+RELOC_TYPE (SHIFT5,             0)
+RELOC_TYPE (SHIFT6,             0)
+RELOC_TYPE (64,                 0)
+RELOC_TYPE (GOT_DISP,           0)
+RELOC_TYPE (GOT_PAGE,           0)
+RELOC_TYPE (GOT_OFST,           0)
+RELOC_TYPE (GOT_HI16,           0)
+RELOC_TYPE (GOT_LO16,           0)
+RELOC_TYPE (SUB,                0)
+RELOC_TYPE (INSERT_A,           0)
+RELOC_TYPE (INSERT_B,           0)
+RELOC_TYPE (DELETE,             0)
+RELOC_TYPE (HIGHER,             0)
+RELOC_TYPE (HIGHEST,            0)
+RELOC_TYPE (CALL_HI16,          0)
+RELOC_TYPE (CALL_LO16,          0)
+RELOC_TYPE (SCN_DISP,           0)
+RELOC_TYPE (REL16,              0)
+RELOC_TYPE (ADD_IMMEDIATE,      0)
+RELOC_TYPE (PJUMP,              0)
+RELOC_TYPE (RELGOT,             0)
+RELOC_TYPE (JALR,               0)
+RELOC_TYPE (TLS_DTPMOD32,       0)
+RELOC_TYPE (TLS_DTPREL32,       0)
+RELOC_TYPE (TLS_DTPMOD64,       0)
+RELOC_TYPE (TLS_DTPREL64,       0)
+RELOC_TYPE (TLS_GD,             0)
+RELOC_TYPE (TLS_LDM,            0)
+RELOC_TYPE (TLS_DTPREL_HI16,    0)
+RELOC_TYPE (TLS_DTPREL_LO16,    0)
+RELOC_TYPE (TLS_GOTTPREL,       0)
+RELOC_TYPE (TLS_TPREL32,        0)
+RELOC_TYPE (TLS_TPREL64,        0)
+RELOC_TYPE (TLS_TPREL_HI16,     0)
+RELOC_TYPE (TLS_TPREL_LO16,     0)
+
+#define NO_COPY_RELOC 1
+#define NO_RELATIVE_RELOC 1

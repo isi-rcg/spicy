@@ -1,0 +1,294 @@
+.\" Copyright (c) 1993 by Thomas Koenig (ig25@rz.uni-karlsruhe.de)
+.\" and Copyright (C) 2017 Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.\" Modified Wed Jul 28 11:12:26 1993 by Rik Faith (faith@cs.unc.edu)
+.\"
+.\" FIXME Probably all of the following should be documented:
+.\"     _PC_SYNC_IO,
+.\"     _PC_ASYNC_IO,
+.\"     _PC_PRIO_IO,
+.\"     _PC_SOCK_MAXBUF,
+.\"     _PC_FILESIZEBITS,
+.\"     _PC_REC_INCR_XFER_SIZE,
+.\"     _PC_REC_MAX_XFER_SIZE,
+.\"     _PC_REC_MIN_XFER_SIZE,
+.\"     _PC_REC_XFER_ALIGN,
+.\"     _PC_ALLOC_SIZE_MIN,
+.\"     _PC_SYMLINK_MAX,
+.\"     _PC_2_SYMLINKS
+.\"
+.TH FPATHCONF 3  2017-07-13 "GNU" "Linux Programmer's Manual"
+.SH NAME
+fpathconf, pathconf \- get configuration values for files
+.SH SYNOPSIS
+.nf
+.B #include <unistd.h>
+.PP
+.BI "long fpathconf(int " fd ", int " name );
+.BI "long pathconf(const char *" path ", int " name );
+.fi
+.SH DESCRIPTION
+.BR fpathconf ()
+gets a value for the configuration option
+.I name
+for the open file descriptor
+.IR fd .
+.PP
+.BR pathconf ()
+gets a value for configuration option
+.I name
+for the filename
+.IR path .
+.PP
+The corresponding macros defined in
+.I <unistd.h>
+are minimum values; if an application wants to take advantage of values
+which may change, a call to
+.BR fpathconf ()
+or
+.BR pathconf ()
+can be made, which may yield more liberal results.
+.PP
+Setting
+.I name
+equal to one of the following constants returns the following
+configuration options:
+.TP
+.B _PC_LINK_MAX
+The maximum number of links to the file.
+If
+.I fd
+or
+.I path
+refer to a directory, then the value applies to the whole directory.
+The corresponding macro is
+.BR _POSIX_LINK_MAX .
+.TP
+.B _PC_MAX_CANON
+The maximum length of a formatted input line, where
+.I fd
+or
+.I path
+must refer to a terminal.
+The corresponding macro is
+.BR _POSIX_MAX_CANON .
+.TP
+.B _PC_MAX_INPUT
+The maximum length of an input line, where
+.I fd
+or
+.I path
+must refer to a terminal.
+The corresponding macro is
+.BR _POSIX_MAX_INPUT .
+.TP
+.B _PC_NAME_MAX
+The maximum length of a filename in the directory
+.I path
+or
+.IR fd
+that the process is allowed to create.
+The corresponding macro is
+.BR _POSIX_NAME_MAX .
+.TP
+.B _PC_PATH_MAX
+The maximum length of a relative pathname when
+.I path
+or
+.I fd
+is the current working directory.
+The corresponding macro is
+.BR _POSIX_PATH_MAX .
+.TP
+.B _PC_PIPE_BUF
+The maximum number of bytes that can be written atomically to a pipe of FIFO.
+For
+.BR fpathconf (),
+.I fd
+should refer to a pipe or FIFO.
+For
+.BR fpathconf (),
+.I path
+should refer to a FIFO or a directory; in the latter case,
+the returned value corresponds to FIFOs created in that directory.
+The corresponding macro is
+.BR _POSIX_PIPE_BUF .
+.TP
+.B _PC_CHOWN_RESTRICTED
+This returns a positive value if the use of
+.BR chown (2)
+and
+.BR fchown (2)
+for changing a file's user ID is restricted to a process
+with appropriate privileges,
+and changing a file's group ID to a value other than the process's
+effective group ID or one of its supplementary group IDs
+is restricted to a process with appropriate privileges.
+According to POSIX.1,
+this variable shall always be defined with a value other than \-1.
+The corresponding macro is
+.BR _POSIX_CHOWN_RESTRICTED .
+.IP
+If
+.I fd
+or
+.I path
+refers to a directory,
+then the return value applies to all files in that directory.
+.TP
+.B _PC_NO_TRUNC
+This returns nonzero if accessing filenames longer than
+.B _POSIX_NAME_MAX
+generates an error.
+The corresponding macro is
+.BR _POSIX_NO_TRUNC .
+.TP
+.B _PC_VDISABLE
+This returns nonzero if special character processing can be disabled, where
+.I fd
+or
+.I path
+must refer to a terminal.
+.SH RETURN VALUE
+The return value of these functions is one of the following:
+.IP * 3
+On error, \-1 is returned and
+.I errno
+is set to indicate the cause of the error
+(for example,
+.BR EINVAL ,
+indicating that
+.I name
+is invalid).
+.IP *
+If
+.I name
+corresponds to a maximum or minimum limit, and that limit is indeterminate,
+\-1 is returned and
+.I errno
+is not changed.
+(To distinguish an indeterminate limit from an error, set
+.I errno
+to zero before the call, and then check whether
+.I errno
+is nonzero when \-1 is returned.)
+.IP *
+If
+.I name
+corresponds to an option,
+a positive value is returned if the option is supported,
+and \-1 is returned if the option is not supported.
+.IP *
+Otherwise,
+the current value of the option or limit is returned.
+This value will not be more restrictive than
+the corresponding value that was described to the application in
+.I <unistd.h>
+or
+.I <limits.h>
+when the application was compiled.
+.SH ERRORS
+.TP
+.B EACCES
+.RB ( pathconf ())
+Search permission is denied for one of the directories in the path prefix of
+.IR path .
+.TP
+.B EBADF
+.RB ( fpathconf ())
+.I fd
+is not a valid file descriptor.
+.TP
+.B EINVAL
+.I name
+is invalid.
+.TP
+.B EINVAL
+The implementation does not support an association of
+.I name
+with the specified file.
+.TP
+.B ELOOP
+.RB ( pathconf ())
+Too many symbolic links were encountered while resolving
+.IR path .
+.TP
+.B ENAMETOOLONG
+.RB ( pathconf ())
+.I path
+is too long.
+.TP
+.B ENOENT
+.RB ( pathconf ())
+A component of
+.I path
+does not exist, or
+.I path
+is an empty string.
+.TP
+.B ENOTDIR
+.RB ( pathconf ())
+A component used as a directory in
+.I path
+is not in fact a directory.
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbw23 lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR fpathconf (),
+.BR pathconf ()
+T}	Thread safety	MT-Safe
+.TE
+.SH CONFORMING TO
+POSIX.1-2001, POSIX.1-2008.
+.SH NOTES
+Files with name lengths longer than the value returned for
+.I name
+equal to
+.B _PC_NAME_MAX
+may exist in the given directory.
+.PP
+Some returned values may be huge; they are not suitable for allocating
+memory.
+.SH SEE ALSO
+.BR getconf (1),
+.BR open (2),
+.BR statfs (2),
+.BR confstr (3),
+.BR sysconf (3)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

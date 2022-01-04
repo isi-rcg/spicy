@@ -1,0 +1,74 @@
+.\" Copyright 2002 Walter Harms (walter.harms@informatik.uni-oldenburg.de)
+.\"
+.\" %%%LICENSE_START(GPL_NOVERSION_ONELINE)
+.\" Distributed under GPL
+.\" %%%LICENSE_END
+.\"
+.TH CLOG10 3 2017-09-15 "" "Linux Programmer's Manual"
+.SH NAME
+clog10, clog10f, clog10l \- base-10 logarithm of a complex number
+.SH SYNOPSIS
+.BR "#define _GNU_SOURCE" "         /* See feature_test_macros(7) */"
+.br
+.B #include <complex.h>
+.PP
+.BI "double complex clog10(double complex " z );
+.br
+.BI "float complex clog10f(float complex " z );
+.br
+.BI "long double complex clog10l(long double complex " z );
+.PP
+Link with \fI\-lm\fP.
+.SH DESCRIPTION
+The call
+.I clog10(z)
+is equivalent to:
+.PP
+    clog(z)/log(10)
+.PP
+or equally:
+.PP
+    log10(cabs(c)) + I * carg(c) / log(10)
+.PP
+The other functions perform the same task for
+.I float
+and
+.IR "long double" .
+.PP
+Note that
+.I z
+close to zero will cause an overflow.
+.SH VERSIONS
+These functions first appeared in glibc in version 2.1.
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbw30 lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR clog10 (),
+.BR clog10f (),
+.BR clog10l ()
+T}	Thread safety	MT-Safe
+.TE
+.SH CONFORMING TO
+These functions are GNU extensions.
+The identifiers are reserved for future use in C99 and C11.
+.SH SEE ALSO
+.BR cabs (3),
+.BR cexp (3),
+.BR clog (3),
+.BR clog2 (3),
+.BR complex (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

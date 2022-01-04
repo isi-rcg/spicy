@@ -1,0 +1,17 @@
+/* 
+ * Copyright (c) 2010 Wind River Systems; see
+ * guts/COPYRIGHT for information.
+ *
+ * SPDX-License-Identifier: LGPL-2.1-only
+ *
+ * static int
+ * wrap_ulckpwdf(void) {
+ *	int rc = -1;
+ */
+
+	/* lock is cleared automatically on close */
+	rc = pseudo_pwd_lck_close();
+
+/*	return rc;
+ * }
+ */

@@ -1,0 +1,700 @@
+.\" Copyright (c) 2016, IBM Corporation.
+.\" Written by Mike Rapoport <rppt@linux.vnet.ibm.com>
+.\" and Copyright (C) 2016 Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.\"
+.TH IOCTL_USERFAULTFD 2 2019-03-06 "Linux" "Linux Programmer's Manual"
+.SH NAME
+ioctl_userfaultfd \- create a file descriptor for handling page faults in user
+space
+.SH SYNOPSIS
+.nf
+.B #include <sys/ioctl.h>
+.PP
+.BI "int ioctl(int " fd ", int " cmd ", ...);"
+.fi
+.SH DESCRIPTION
+Various
+.BR ioctl (2)
+operations can be performed on a userfaultfd object (created by a call to
+.BR userfaultfd (2))
+using calls of the form:
+.PP
+.in +4n
+.EX
+ioctl(fd, cmd, argp);
+.EE
+.in
+In the above,
+.I fd
+is a file descriptor referring to a userfaultfd object,
+.I cmd
+is one of the commands listed below, and
+.I argp
+is a pointer to a data structure that is specific to
+.IR cmd .
+.PP
+The various
+.BR ioctl (2)
+operations are described below.
+The
+.BR UFFDIO_API ,
+.BR UFFDIO_REGISTER ,
+and
+.BR UFFDIO_UNREGISTER
+operations are used to
+.I configure
+userfaultfd behavior.
+These operations allow the caller to choose what features will be enabled and
+what kinds of events will be delivered to the application.
+The remaining operations are
+.IR range
+operations.
+These operations enable the calling application to resolve page-fault
+events.
+.\"
+.SS UFFDIO_API
+(Since Linux 4.3.)
+Enable operation of the userfaultfd and perform API handshake.
+.PP
+The
+.I argp
+argument is a pointer to a
+.IR uffdio_api
+structure, defined as:
+.PP
+.in +4n
+.EX
+struct uffdio_api {
+    __u64 api;        /* Requested API version (input) */
+    __u64 features;   /* Requested features (input/output) */
+    __u64 ioctls;     /* Available ioctl() operations (output) */
+};
+.EE
+.in
+.PP
+The
+.I api
+field denotes the API version requested by the application.
+.PP
+The kernel verifies that it can support the requested API version,
+and sets the
+.I features
+and
+.I ioctls
+fields to bit masks representing all the available features and the generic
+.BR ioctl (2)
+operations available.
+.PP
+For Linux kernel versions before 4.11, the
+.I features
+field must be initialized to zero before the call to
+.IR UFFDIO_API ,
+and zero (i.e., no feature bits) is placed in the
+.I features
+field by the kernel upon return from
+.BR ioctl (2).
+.PP
+Starting from Linux 4.11, the
+.I features
+field can be used to ask whether particular features are supported
+and explicitly enable userfaultfd features that are disabled by default.
+The kernel always reports all the available features in the
+.I features
+field.
+.PP
+To enable userfaultfd features the application should set
+a bit corresponding to each feature it wants to enable in the
+.I features
+field.
+If the kernel supports all the requested features it will enable them.
+Otherwise it will zero out the returned
+.I uffdio_api
+structure and return
+.BR EINVAL .
+.\" FIXME add more details about feature negotiation and enablement
+.PP
+The following feature bits may be set:
+.TP
+.BR UFFD_FEATURE_EVENT_FORK " (since Linux 4.11)"
+When this feature is enabled,
+the userfaultfd objects associated with a parent process are duplicated
+into the child process during
+.BR fork (2)
+and a
+.B UFFD_EVENT_FORK
+event is delivered to the userfaultfd monitor
+.TP
+.BR UFFD_FEATURE_EVENT_REMAP " (since Linux 4.11)"
+If this feature is enabled,
+when the faulting process invokes
+.BR mremap (2),
+the userfaultfd monitor will receive an event of type
+.BR UFFD_EVENT_REMAP .
+.TP
+.BR UFFD_FEATURE_EVENT_REMOVE " (since Linux 4.11)"
+If this feature is enabled,
+when the faulting process calls
+.BR madvise (2)
+with the
+.B MADV_DONTNEED
+or
+.B MADV_REMOVE
+advice value to free a virtual memory area
+the userfaultfd monitor will receive an event of type
+.BR UFFD_EVENT_REMOVE .
+.TP
+.BR UFFD_FEATURE_EVENT_UNMAP " (since Linux 4.11)"
+If this feature is enabled,
+when the faulting process unmaps virtual memory either explicitly with
+.BR munmap (2),
+or implicitly during either
+.BR mmap (2)
+or
+.BR mremap (2).
+the userfaultfd monitor will receive an event of type
+.BR UFFD_EVENT_UNMAP .
+.TP
+.BR UFFD_FEATURE_MISSING_HUGETLBFS " (since Linux 4.11)"
+If this feature bit is set,
+the kernel supports registering userfaultfd ranges on hugetlbfs
+virtual memory areas
+.TP
+.BR UFFD_FEATURE_MISSING_SHMEM " (since Linux 4.11)"
+If this feature bit is set,
+the kernel supports registering userfaultfd ranges on shared memory areas.
+This includes all kernel shared memory APIs:
+System V shared memory,
+.BR tmpfs (5),
+shared mappings of
+.IR /dev/zero ,
+.BR mmap (2)
+with the
+.B MAP_SHARED
+flag set,
+.BR memfd_create (2),
+and so on.
+.TP
+.BR UFFD_FEATURE_SIGBUS " (since Linux 4.14)"
+.\" commit 2d6d6f5a09a96cc1fec7ed992b825e05f64cb50e
+If this feature bit is set, no page-fault events
+.RB ( UFFD_EVENT_PAGEFAULT )
+will be delivered.
+Instead, a
+.B SIGBUS
+signal will be sent to the faulting process.
+Applications using this
+feature will not require the use of a userfaultfd monitor for processing
+memory accesses to the regions registered with userfaultfd.
+.PP
+The returned
+.I ioctls
+field can contain the following bits:
+.\" FIXME This user-space API seems not fully polished. Why are there
+.\" not constants defined for each of the bit-mask values listed below?
+.TP
+.B 1 << _UFFDIO_API
+The
+.B UFFDIO_API
+operation is supported.
+.TP
+.B 1 << _UFFDIO_REGISTER
+The
+.B UFFDIO_REGISTER
+operation is supported.
+.TP
+.B 1 << _UFFDIO_UNREGISTER
+The
+.B UFFDIO_UNREGISTER
+operation is supported.
+.PP
+This
+.BR ioctl (2)
+operation returns 0 on success.
+On error, \-1 is returned and
+.I errno
+is set to indicate the cause of the error.
+Possible errors include:
+.TP
+.B EFAULT
+.I argp
+refers to an address that is outside the calling process's
+accessible address space.
+.TP
+.B EINVAL
+The userfaultfd has already been enabled by a previous
+.BR UFFDIO_API
+operation.
+.TP
+.B EINVAL
+The API version requested in the
+.I api
+field is not supported by this kernel, or the
+.I features
+field passed to the kernel includes feature bits that are not supported
+by the current kernel version.
+.\" FIXME In the above error case, the returned 'uffdio_api' structure is
+.\" zeroed out. Why is this done? This should be explained in the manual page.
+.\"
+.\" Mike Rapoport:
+.\"     In my understanding the uffdio_api
+.\"     structure is zeroed to allow the caller
+.\"     to distinguish the reasons for -EINVAL.
+.\"
+.SS UFFDIO_REGISTER
+(Since Linux 4.3.)
+Register a memory address range with the userfaultfd object.
+The pages in the range must be "compatible".
+.PP
+Up to Linux kernel 4.11,
+only private anonymous ranges are compatible for registering with
+.BR UFFDIO_REGISTER .
+.PP
+Since Linux 4.11,
+hugetlbfs and shared memory ranges are also compatible with
+.BR UFFDIO_REGISTER .
+.PP
+The
+.I argp
+argument is a pointer to a
+.I uffdio_register
+structure, defined as:
+.PP
+.in +4n
+.EX
+struct uffdio_range {
+    __u64 start;    /* Start of range */
+    __u64 len;      /* Length of range (bytes) */
+};
+
+struct uffdio_register {
+    struct uffdio_range range;
+    __u64 mode;     /* Desired mode of operation (input) */
+    __u64 ioctls;   /* Available ioctl() operations (output) */
+};
+.EE
+.in
+.PP
+The
+.I range
+field defines a memory range starting at
+.I start
+and continuing for
+.I len
+bytes that should be handled by the userfaultfd.
+.PP
+The
+.I mode
+field defines the mode of operation desired for this memory region.
+The following values may be bitwise ORed to set the userfaultfd mode for
+the specified range:
+.TP
+.B UFFDIO_REGISTER_MODE_MISSING
+Track page faults on missing pages.
+.TP
+.B UFFDIO_REGISTER_MODE_WP
+Track page faults on write-protected pages.
+.PP
+Currently, the only supported mode is
+.BR UFFDIO_REGISTER_MODE_MISSING .
+.PP
+If the operation is successful, the kernel modifies the
+.I ioctls
+bit-mask field to indicate which
+.BR ioctl (2)
+operations are available for the specified range.
+This returned bit mask is as for
+.BR UFFDIO_API .
+.PP
+This
+.BR ioctl (2)
+operation returns 0 on success.
+On error, \-1 is returned and
+.I errno
+is set to indicate the cause of the error.
+Possible errors include:
+.\" FIXME Is the following error list correct?
+.\"
+.TP
+.B EBUSY
+A mapping in the specified range is registered with another
+userfaultfd object.
+.TP
+.B EFAULT
+.I argp
+refers to an address that is outside the calling process's
+accessible address space.
+.TP
+.B EINVAL
+An invalid or unsupported bit was specified in the
+.I mode
+field; or the
+.I mode
+field was zero.
+.TP
+.B EINVAL
+There is no mapping in the specified address range.
+.TP
+.B EINVAL
+.I range.start
+or
+.I range.len
+is not a multiple of the system page size; or,
+.I range.len
+is zero; or these fields are otherwise invalid.
+.TP
+.B EINVAL
+There as an incompatible mapping in the specified address range.
+.\" Mike Rapoport:
+.\" ENOMEM if the process is exiting and the
+.\" mm_struct has gone by the time userfault grabs it.
+.SS UFFDIO_UNREGISTER
+(Since Linux 4.3.)
+Unregister a memory address range from userfaultfd.
+The pages in the range must be "compatible" (see the description of
+.BR  UFFDIO_REGISTER .)
+.PP
+The address range to unregister is specified in the
+.IR uffdio_range
+structure pointed to by
+.IR argp .
+.PP
+This
+.BR ioctl (2)
+operation returns 0 on success.
+On error, \-1 is returned and
+.I errno
+is set to indicate the cause of the error.
+Possible errors include:
+.TP
+.B EINVAL
+Either the
+.I start
+or the
+.I len
+field of the
+.I ufdio_range
+structure was not a multiple of the system page size; or the
+.I len
+field was zero; or these fields were otherwise invalid.
+.TP
+.B EINVAL
+There as an incompatible mapping in the specified address range.
+.TP
+.B EINVAL
+There was no mapping in the specified address range.
+.\"
+.SS UFFDIO_COPY
+(Since Linux 4.3.)
+Atomically copy a continuous memory chunk into the userfault registered
+range and optionally wake up the blocked thread.
+The source and destination addresses and the number of bytes to copy are
+specified by the
+.IR src ", " dst ", and " len
+fields of the
+.I uffdio_copy
+structure pointed to by
+.IR argp :
+.PP
+.in +4n
+.EX
+struct uffdio_copy {
+    __u64 dst;    /* Source of copy */
+    __u64 src;    /* Destination of copy */
+    __u64 len;    /* Number of bytes to copy */
+    __u64 mode;   /* Flags controlling behavior of copy */
+    __s64 copy;   /* Number of bytes copied, or negated error */
+};
+.EE
+.in
+.PP
+The following value may be bitwise ORed in
+.IR mode
+to change the behavior of the
+.B UFFDIO_COPY
+operation:
+.TP
+.B UFFDIO_COPY_MODE_DONTWAKE
+Do not wake up the thread that waits for page-fault resolution
+.PP
+The
+.I copy
+field is used by the kernel to return the number of bytes
+that was actually copied, or an error (a negated
+.IR errno -style
+value).
+.\" FIXME Above: Why is the 'copy' field used to return error values?
+.\" This should be explained in the manual page.
+If the value returned in
+.I copy
+doesn't match the value that was specified in
+.IR len ,
+the operation fails with the error
+.BR EAGAIN .
+The
+.I copy
+field is output-only;
+it is not read by the
+.B UFFDIO_COPY
+operation.
+.PP
+This
+.BR ioctl (2)
+operation returns 0 on success.
+In this case, the entire area was copied.
+On error, \-1 is returned and
+.I errno
+is set to indicate the cause of the error.
+Possible errors include:
+.TP
+.B EAGAIN
+The number of bytes copied (i.e., the value returned in the
+.I copy
+field)
+does not equal the value that was specified in the
+.I len
+field.
+.TP
+.B EINVAL
+Either
+.I dst
+or
+.I len
+was not a multiple of the system page size, or the range specified by
+.IR src
+and
+.IR len
+or
+.IR dst
+and
+.IR len
+was invalid.
+.TP
+.B EINVAL
+An invalid bit was specified in the
+.IR mode
+field.
+.TP
+.BR ENOENT " (since Linux 4.11)"
+The faulting process has changed
+its virtual memory layout simultaneously with an outstanding
+.I UFFDIO_COPY
+operation.
+.TP
+.BR ENOSPC " (from Linux 4.11 until Linux 4.13)"
+The faulting process has exited at the time of a
+.I UFFDIO_COPY
+operation.
+.TP
+.BR ESRCH " (since Linux 4.13)"
+The faulting process has exited at the time of a
+.I UFFDIO_COPY
+operation.
+.\"
+.SS UFFDIO_ZEROPAGE
+(Since Linux 4.3.)
+Zero out a memory range registered with userfaultfd.
+.PP
+The requested range is specified by the
+.I range
+field of the
+.I uffdio_zeropage
+structure pointed to by
+.IR argp :
+.PP
+.in +4n
+.EX
+struct uffdio_zeropage {
+    struct uffdio_range range;
+    __u64 mode;     /* Flags controlling behavior of copy */
+    __s64 zeropage; /* Number of bytes zeroed, or negated error */
+};
+.EE
+.in
+.PP
+The following value may be bitwise ORed in
+.IR mode
+to change the behavior of the
+.B UFFDIO_ZEROPAGE
+operation:
+.TP
+.B UFFDIO_ZEROPAGE_MODE_DONTWAKE
+Do not wake up the thread that waits for page-fault resolution.
+.PP
+The
+.I zeropage
+field is used by the kernel to return the number of bytes
+that was actually zeroed,
+or an error in the same manner as
+.BR UFFDIO_COPY .
+.\" FIXME Why is the 'zeropage' field used to return error values?
+.\" This should be explained in the manual page.
+If the value returned in the
+.I zeropage
+field doesn't match the value that was specified in
+.IR range.len ,
+the operation fails with the error
+.BR EAGAIN .
+The
+.I zeropage
+field is output-only;
+it is not read by the
+.B UFFDIO_ZEROPAGE
+operation.
+.PP
+This
+.BR ioctl (2)
+operation returns 0 on success.
+In this case, the entire area was zeroed.
+On error, \-1 is returned and
+.I errno
+is set to indicate the cause of the error.
+Possible errors include:
+.TP
+.B EAGAIN
+The number of bytes zeroed (i.e., the value returned in the
+.I zeropage
+field)
+does not equal the value that was specified in the
+.I range.len
+field.
+.TP
+.B EINVAL
+Either
+.I range.start
+or
+.I range.len
+was not a multiple of the system page size; or
+.I range.len
+was zero; or the range specified was invalid.
+.TP
+.B EINVAL
+An invalid bit was specified in the
+.IR mode
+field.
+.TP
+.BR ESRCH " (since Linux 4.13)"
+The faulting process has exited at the time of a
+.I UFFDIO_ZEROPAGE
+operation.
+.\"
+.SS UFFDIO_WAKE
+(Since Linux 4.3.)
+Wake up the thread waiting for page-fault resolution on
+a specified memory address range.
+.PP
+The
+.B UFFDIO_WAKE
+operation is used in conjunction with
+.BR UFFDIO_COPY
+and
+.BR UFFDIO_ZEROPAGE
+operations that have the
+.BR UFFDIO_COPY_MODE_DONTWAKE
+or
+.BR UFFDIO_ZEROPAGE_MODE_DONTWAKE
+bit set in the
+.I mode
+field.
+The userfault monitor can perform several
+.BR UFFDIO_COPY
+and
+.BR UFFDIO_ZEROPAGE
+operations in a batch and then explicitly wake up the faulting thread using
+.BR UFFDIO_WAKE .
+.PP
+The
+.I argp
+argument is a pointer to a
+.I uffdio_range
+structure (shown above) that specifies the address range.
+.PP
+This
+.BR ioctl (2)
+operation returns 0 on success.
+On error, \-1 is returned and
+.I errno
+is set to indicate the cause of the error.
+Possible errors include:
+.TP
+.B EINVAL
+The
+.I start
+or the
+.I len
+field of the
+.I ufdio_range
+structure was not a multiple of the system page size; or
+.I len
+was zero; or the specified range was otherwise invalid.
+.SH RETURN VALUE
+See descriptions of the individual operations, above.
+.SH ERRORS
+See descriptions of the individual operations, above.
+In addition, the following general errors can occur for all of the
+operations described above:
+.TP
+.B EFAULT
+.I argp
+does not point to a valid memory address.
+.TP
+.B EINVAL
+(For all operations except
+.BR UFFDIO_API .)
+The userfaultfd object has not yet been enabled (via the
+.BR UFFDIO_API
+operation).
+.SH CONFORMING TO
+These
+.BR ioctl (2)
+operations are Linux-specific.
+.SH BUGS
+In order to detect available userfault features and
+enable some subset of those features
+the userfaultfd file descriptor must be closed after the first
+.BR UFFDIO_API
+operation that queries features availability and reopened before
+the second
+.BR UFFDIO_API
+operation that actually enables the desired features.
+.SH EXAMPLE
+See
+.BR userfaultfd (2).
+.SH SEE ALSO
+.BR ioctl (2),
+.BR mmap (2),
+.BR userfaultfd (2)
+.PP
+.IR Documentation/admin-guide/mm/userfaultfd.rst
+in the Linux kernel source tree
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

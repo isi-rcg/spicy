@@ -1,0 +1,6 @@
+Name: udev
+Description: eudev
+Version: 228
+prefix=/usr
+exec_prefix=/usr
+udevdir=/lib/udev

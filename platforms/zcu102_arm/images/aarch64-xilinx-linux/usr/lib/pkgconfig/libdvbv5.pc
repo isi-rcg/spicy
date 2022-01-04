@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+libdir=/usr/lib
+
+Name: libdvbv5
+Description: DVBv5 utility library
+Version: 1.16.5
+Requires.private: libudev
+Libs: -L${libdir} -ldvbv5
+Cflags: -I${includedir}

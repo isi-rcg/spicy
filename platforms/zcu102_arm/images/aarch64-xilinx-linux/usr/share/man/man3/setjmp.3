@@ -1,0 +1,338 @@
+.\" Copyright (C) 2016 Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.TH SETJMP 3 2017-03-13 "" "Linux Programmer's Manual"
+.SH NAME
+setjmp, sigsetjmp, longjmp, siglongjmp  \- performing a nonlocal goto
+.SH SYNOPSIS
+.nf
+.B #include <setjmp.h>
+.PP
+.BI "int setjmp(jmp_buf " env );
+.BI "int sigsetjmp(sigjmp_buf " env ", int " savesigs );
+.PP
+.BI "void longjmp(jmp_buf " env ", int " val );
+.BI "void siglongjmp(sigjmp_buf " env ", int " val );
+.fi
+.PP
+.in -4n
+Feature Test Macro Requirements for glibc (see
+.BR feature_test_macros (7)):
+.in
+.PP
+.BR setjmp ():
+see NOTES.
+.PP
+.BR sigsetjmp ():
+_POSIX_C_SOURCE
+.SH DESCRIPTION
+The functions described on this page are used for performing "nonlocal gotos":
+transferring execution from one function to a predetermined location
+in another function.
+The
+.BR setjmp ()
+function dynamically establishes the target to which control
+will later be transferred, and
+.BR longjmp ()
+performs the transfer of execution.
+.PP
+The
+.BR setjmp ()
+function saves various information about the calling environment
+(typically, the stack pointer, the instruction pointer,
+possibly the values of other registers and the signal mask)
+in the buffer
+.IR env
+for later use by
+.BR longjmp ().
+In this case,
+.BR setjmp ()
+returns 0.
+.PP
+The
+.BR longjmp ()
+function uses the information saved in
+.IR env
+to transfer control back to the point where
+.BR setjmp ()
+was called and to restore ("rewind") the stack to its state at the time of the
+.BR setjmp ()
+call.
+In addition, and depending on the implementation (see NOTES),
+the values of some other registers and the process signal mask
+may be restored to their state at the time of the
+.BR setjmp ()
+call.
+.PP
+Following a successful
+.BR longjmp (),
+execution continues as if
+.BR setjmp ()
+had returned for a second time.
+This "fake" return can be distinguished from a true
+.BR setjmp ()
+call because the "fake" return returns the value provided in
+.IR val .
+If the programmer mistakenly passes the value 0 in
+.IR val ,
+the "fake" return will instead return 1.
+.PP
+.SS sigsetjmp() and siglongjmp()
+.BR sigsetjmp ()
+and
+.BR siglongjmp ()
+also perform nonlocal gotos, but provide predictable handling of
+the process signal mask.
+.PP
+If, and only if, the
+.I savesigs
+argument provided to
+.BR sigsetjmp ()
+is nonzero, the process's current signal mask is saved in
+.I env
+and will be restored if a
+.BR siglongjmp ()
+is later performed with this
+.IR env .
+.SH RETURN VALUE
+.BR setjmp ()
+and
+.BR sigsetjmp ()
+return 0 when called directly;
+on the "fake" return that occurs after
+.BR longjmp ()
+or
+.BR siglongjmp (),
+the nonzero value specified in
+.I val
+is returned.
+.PP
+The
+.BR longjmp ()
+or
+.BR siglongjmp ()
+functions do not return.
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbw23 lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR setjmp (),
+.BR sigsetjmp ()
+T}	Thread safety	MT-Safe
+T{
+.BR longjmp (),
+.BR siglongjmp ()
+T}	Thread safety	MT-Safe
+.TE
+.PP
+.SH CONFORMING TO
+.BR setjmp (),
+.BR longjmp ():
+POSIX.1-2001, POSIX.1-2008, C89, C99.
+.PP
+.BR sigsetjmp (),
+.BR siglongjmp ():
+POSIX.1-2001, POSIX.1-2008.
+.SH NOTES
+POSIX does not specify whether
+.BR setjmp ()
+will save the signal mask
+(to be later restored during
+.BR longjmp ()).
+In System V it will not.
+In 4.3BSD it will, and there
+is a function
+.BR _setjmp ()
+that will not.
+The behavior under Linux depends on the glibc version
+and the setting of feature test macros.
+On Linux with glibc versions before 2.19,
+.BR setjmp ()
+follows the System V behavior by default,
+but the BSD behavior is provided if the
+.BR _BSD_SOURCE
+feature test macro is explicitly defined
+.\" so that _FAVOR_BSD is triggered
+and none of
+.BR _POSIX_SOURCE ,
+.BR _POSIX_C_SOURCE ,
+.BR _XOPEN_SOURCE ,
+.\" .BR _XOPEN_SOURCE_EXTENDED ,
+.BR _GNU_SOURCE ,
+or
+.B _SVID_SOURCE
+is defined.
+Since glibc 2.19,
+.IR <setjmp.h>
+exposes only the System V version of
+.BR setjmp ().
+Programs that need the BSD semantics should replace calls to
+.BR setjmp ()
+with calls to
+.BR sigsetjmp ()
+with a nonzero
+.I savesigs
+argument.
+.PP
+.BR setjmp ()
+and
+.BR longjmp ()
+can be useful for dealing with errors inside deeply nested function calls
+or to allow a signal handler to pass control to
+a specific point in the program,
+rather than returning to the point where the handler interrupted
+the main program.
+In the latter case,
+if you want to portably save and restore signal masks, use
+.BR sigsetjmp ()
+and
+.BR siglongjmp ().
+See also the discussion of program readability below.
+.PP
+The compiler may optimize variables into registers, and
+.BR longjmp ()
+may restore the values of other registers in addition to the
+stack pointer and program counter.
+Consequently, the values of automatic variables are unspecified
+after a call to
+.BR longjmp ()
+if they meet all the following criteria:
+.IP \(bu 3
+they are local to the function that made the corresponding
+.BR setjmp ()
+call;
+.IP \(bu
+their values are changed between the calls to
+.BR setjmp ()
+and
+.BR longjmp ();
+and
+.IP \(bu
+they are not declared as
+.IR volatile .
+.PP
+Analogous remarks apply for
+.BR siglongjmp ().
+.\"
+.SS Nonlocal gotos and program readability
+While it can be abused,
+the traditional C "goto" statement at least has the benefit that lexical cues
+(the goto statement and the target label)
+allow the programmer to easily perceive the flow of control.
+Nonlocal gotos provide no such cues: multiple
+.BR setjmp ()
+calls might employ the same
+.IR jmp_buf
+variable so that the content of the variable may change
+over the lifetime of the application.
+Consequently, the programmer may be forced to perform detailed
+reading of the code to determine the dynamic target of a particular
+.BR longjmp ()
+call.
+(To make the programmer's life easier, each
+.BR setjmp ()
+call should employ a unique
+.IR jmp_buf
+variable.)
+.PP
+Adding further difficulty, the
+.BR setjmp ()
+and
+.BR longjmp ()
+calls may not even be in the same source code module.
+.PP
+In summary, nonlocal gotos can make programs harder to understand
+and maintain, and an alternative should be used if possible.
+.\"
+.SS Caveats
+If the function which called
+.BR setjmp ()
+returns before
+.BR longjmp ()
+is called, the behavior is undefined.
+Some kind of subtle or unsubtle chaos is sure to result.
+.PP
+If, in a multithreaded program, a
+.BR longjmp ()
+call employs an
+.I env
+buffer that was initialized by a call to
+.BR setjmp ()
+in a different thread, the behavior is undefined.
+.\"
+.\" The following statement appeared in versions up to POSIX.1-2008 TC1,
+.\" but is set to be removed in POSIX.1-2008 TC2:
+.\"
+.\"     According to POSIX.1, if a
+.\"     .BR longjmp ()
+.\"     call is performed from a nested signal handler
+.\"     (i.e., from a handler that was invoked in response to a signal that was
+.\"     generated while another signal was already in the process of being
+.\"     handled), the behavior is undefined.
+.PP
+POSIX.1-2008 Technical Corrigendum 2 adds
+.\" http://austingroupbugs.net/view.php?id=516#c1195
+.BR longjmp ()
+and
+.BR siglongjmp ()
+to the list of async-signal-safe functions.
+However, the standard recommends avoiding the use of these functions
+from signal handlers and goes on to point out that
+if these functions are called from a signal handler that interrupted
+a call to a non-async-signal-safe function (or some equivalent,
+such as the steps equivalent to
+.BR exit (3)
+that occur upon a return from the initial call to
+.IR main ()),
+the behavior is undefined if the program subsequently makes a call to
+a non-async-signal-safe function.
+The only way of avoiding undefined behavior is to ensure one of the following:
+.IP * 3
+After long jumping from the signal handler,
+the program does not call any non-async-signal-safe functions
+and does not return from the initial call to
+.IR main ().
+.IP *
+Any signal whose handler performs a long jump must be blocked during
+.I every
+call to a non-async-signal-safe function and
+no non-async-signal-safe functions are called after
+returning from the initial call to
+.IR main ().
+.SH SEE ALSO
+.BR signal (7),
+.BR signal-safety (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

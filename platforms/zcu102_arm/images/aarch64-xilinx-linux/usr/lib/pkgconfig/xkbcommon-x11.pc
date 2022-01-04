@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: xkbcommon-x11
+Description: XKB API common to servers and clients - X11 support
+Version: 0.8.4
+Requires: xkbcommon
+Requires.private: xcb xcb-xkb
+Cflags: -I${includedir}
+Libs: -L${libdir} -lxkbcommon-x11

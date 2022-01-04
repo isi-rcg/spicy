@@ -1,0 +1,319 @@
+.\" Copyright (C) 2014, Theodore Ts'o <tytso@mit.edu>
+.\" Copyright (C) 2014,2015 Heinrich Schuchardt <xypron.glpk@gmx.de>
+.\" Copyright (C) 2015, Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of
+.\" this manual under the conditions for verbatim copying, provided that
+.\" the entire resulting derived work is distributed under the terms of
+.\" a permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume.
+.\" no responsibility for errors or omissions, or for damages resulting.
+.\" from the use of the information contained herein.  The author(s) may.
+.\" not have taken the same level of care in the production of this.
+.\" manual, which is licensed free of charge, as they might when working.
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.TH GETRANDOM 2 2017-09-15 "Linux" "Linux Programmer's Manual"
+.SH NAME
+getrandom \- obtain a series of random bytes
+.SH SYNOPSIS
+.B #include <sys/random.h>
+.PP
+.BI "ssize_t getrandom(void *"buf ", size_t " buflen ", unsigned int " flags );
+.SH DESCRIPTION
+The
+.BR getrandom ()
+system call fills the buffer pointed to by
+.I buf
+with up to
+.I buflen
+random bytes.
+These bytes can be used to seed user-space random number generators
+or for cryptographic purposes.
+.PP
+By default,
+.BR getrandom ()
+draws entropy from the
+.I urandom
+source (i.e., the same source as the
+.IR /dev/urandom
+device).
+This behavior can be changed via the
+.I flags
+argument.
+.PP
+If the
+.I urandom
+source has been initialized,
+reads of up to 256 bytes will always return as many bytes as
+requested and will not be interrupted by signals.
+No such guarantees apply for larger buffer sizes.
+For example, if the call is interrupted by a signal handler,
+it may return a partially filled buffer, or fail with the error
+.BR EINTR .
+.PP
+If the
+.I urandom
+source has not yet been initialized, then
+.BR getrandom ()
+will block, unless
+.B GRND_NONBLOCK
+is specified in
+.IR flags .
+.PP
+The
+.I flags
+argument is a bit mask that can contain zero or more of the following values
+ORed together:
+.TP
+.B GRND_RANDOM
+If this bit is set, then random bytes are drawn from the
+.I random
+source
+(i.e., the same source as the
+.IR /dev/random
+device)
+instead of the
+.I urandom
+source.
+The
+.I random
+source is limited based on the entropy that can be obtained from environmental
+noise.
+If the number of available bytes in the
+.I random
+source is less than requested in
+.IR buflen ,
+the call returns just the available random bytes.
+If no random bytes are available, the behavior depends on the presence of
+.B GRND_NONBLOCK
+in the
+.I flags
+argument.
+.TP
+.B GRND_NONBLOCK
+By default, when reading from the
+.IR random
+source,
+.BR getrandom ()
+blocks if no random bytes are available,
+and when reading from the
+.IR urandom
+source, it blocks if the entropy pool has not yet been initialized.
+If the
+.B GRND_NONBLOCK
+flag is set, then
+.BR getrandom ()
+does not block in these cases, but instead immediately returns \-1 with
+.I errno
+set to
+.BR EAGAIN .
+.SH RETURN VALUE
+On success,
+.BR getrandom ()
+returns the number of bytes that were copied to the buffer
+.IR buf .
+This may be less than the number of bytes requested via
+.I buflen
+if either
+.BR GRND_RANDOM
+was specified in
+.IR flags
+and insufficient entropy was present in the
+.IR random
+source or the system call was interrupted by a signal.
+.PP
+On error, \-1 is returned, and
+.I errno
+is set appropriately.
+.SH ERRORS
+.TP
+.B EAGAIN
+The requested entropy was not available, and
+.BR getrandom ()
+would have blocked if the
+.B GRND_NONBLOCK
+flag was not set.
+.TP
+.B EFAULT
+The address referred to by
+.I buf
+is outside the accessible address space.
+.TP
+.B EINTR
+The call was interrupted by a signal
+handler; see the description of how interrupted
+.BR read (2)
+calls on "slow" devices are handled with and without the
+.B SA_RESTART
+flag in the
+.BR signal (7)
+man page.
+.TP
+.B EINVAL
+An invalid flag was specified in
+.IR flags .
+.TP
+.B ENOSYS
+The glibc wrapper function for
+.BR getrandom ()
+determined that the underlying kernel does not implement this system call.
+.SH VERSIONS
+.BR getrandom ()
+was introduced in version 3.17 of the Linux kernel.
+Support was added to glibc in version 2.25.
+.SH CONFORMING TO
+This system call is Linux-specific.
+.SH NOTES
+For an overview and comparison of the various interfaces that
+can be used to obtain randomness, see
+.BR random (7).
+.PP
+Unlike
+.IR /dev/random
+and
+.IR /dev/urandom ,
+.BR getrandom ()
+does not involve the use of pathnames or file descriptors.
+Thus,
+.BR getrandom ()
+can be useful in cases where
+.BR chroot (2)
+makes
+.I /dev
+pathnames invisible,
+and where an application (e.g., a daemon during start-up)
+closes a file descriptor for one of these files
+that was opened by a library.
+.\"
+.SS Maximum number of bytes returned
+As of Linux 3.19 the following limits apply:
+.IP * 3
+When reading from the
+.IR urandom
+source, a maximum of 33554431 bytes is returned by a single call to
+.BR getrandom ()
+on systems where
+.I int
+has a size of 32 bits.
+.IP *
+When reading from the
+.IR random
+source, a maximum of 512 bytes is returned.
+.SS Interruption by a signal handler
+When reading from the
+.I urandom
+source
+.RB ( GRND_RANDOM
+is not set),
+.BR getrandom ()
+will block until the entropy pool has been initialized
+(unless the
+.BR GRND_NONBLOCK
+flag was specified).
+If a request is made to read a large number of bytes (more than 256),
+.BR getrandom ()
+will block until those bytes have been generated and transferred
+from kernel memory to
+.IR buf .
+When reading from the
+.I random
+source
+.RB ( GRND_RANDOM
+is set),
+.BR getrandom ()
+will block until some random bytes become available
+(unless the
+.BR GRND_NONBLOCK
+flag was specified).
+.PP
+The behavior when a call to
+.BR getrandom ()
+that is blocked while reading from the
+.I urandom
+source is interrupted by a signal handler
+depends on the initialization state of the entropy buffer
+and on the request size,
+.IR buflen .
+If the entropy is not yet initialized, then the call fails with the
+.B EINTR
+error.
+If the entropy pool has been initialized
+and the request size is large
+.RI ( buflen "\ >\ 256),"
+the call either succeeds, returning a partially filled buffer,
+or fails with the error
+.BR EINTR .
+If the entropy pool has been initialized and the request size is small
+.RI ( buflen "\ <=\ 256),"
+then
+.BR getrandom ()
+will not fail with
+.BR EINTR .
+Instead, it will return all of the bytes that have been requested.
+.PP
+When reading from the
+.IR random
+source, blocking requests of any size can be interrupted by a signal handler
+(the call fails with the error
+.BR EINTR ).
+.PP
+Using
+.BR getrandom ()
+to read small buffers (<=\ 256 bytes) from the
+.I urandom
+source is the preferred mode of usage.
+.PP
+The special treatment of small values of
+.I buflen
+was designed for compatibility with
+OpenBSD's
+.BR getentropy (3),
+which is nowadays supported by glibc.
+.PP
+The user of
+.BR getrandom ()
+.I must
+always check the return value,
+to determine whether either an error occurred
+or fewer bytes than requested were returned.
+In the case where
+.B GRND_RANDOM
+is not specified and
+.I buflen
+is less than or equal to 256,
+a return of fewer bytes than requested should never happen,
+but the careful programmer will check for this anyway!
+.SH BUGS
+As of Linux 3.19, the following bug exists:
+.\" FIXME patch proposed https://lkml.org/lkml/2014/11/29/16
+.IP * 3
+Depending on CPU load,
+.BR getrandom ()
+does not react to interrupts before reading all bytes requested.
+.SH SEE ALSO
+.BR getentropy (3),
+.BR random (4),
+.BR urandom (4),
+.BR random (7),
+.BR signal (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

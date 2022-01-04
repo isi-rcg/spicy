@@ -1,0 +1,9 @@
+prefix=/usr
+exec_prefix=/usr
+datarootdir=${prefix}/share
+pkgdatadir=/usr/share/wayland
+wayland_scanner=wayland-scanner
+
+Name: Wayland Scanner
+Description: Wayland scanner
+Version: 1.17.0

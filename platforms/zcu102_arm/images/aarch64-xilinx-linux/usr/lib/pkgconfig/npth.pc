@@ -1,0 +1,10 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: npth
+Description: a new portable posix threading library
+Version: 1.6-unknown
+Libs: -L${libdir} -lnpth -lpthread
+Cflags: -I${includedir}

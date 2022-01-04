@@ -1,0 +1,103 @@
+.\" Copyright 2002 Walter Harms (walter.harms@informatik.uni-oldenburg.de)
+.\"
+.\" %%%LICENSE_START(GPL_NOVERSION_ONELINE)
+.\" Distributed under GPL
+.\" %%%LICENSE_END
+.\"
+.\" Based on glibc infopages
+.\"
+.\" Corrections by aeb
+.\"
+.TH NAN 3 2016-03-15 "GNU" "Linux Programmer's Manual"
+.SH NAME
+nan, nanf, nanl \- return 'Not a Number'
+.SH SYNOPSIS
+.B #include <math.h>
+.PP
+.BI "double nan(const char *" tagp );
+.br
+.BI "float nanf(const char *" tagp );
+.br
+.BI "long double nanl(const char *" tagp );
+.PP
+Link with \fI\-lm\fP.
+.PP
+.in -4n
+Feature Test Macro Requirements for glibc (see
+.BR feature_test_macros (7)):
+.in
+.PP
+.ad l
+.BR nan (),
+.BR nanf (),
+.BR nanl ():
+.RS 4
+_ISOC99_SOURCE || _POSIX_C_SOURCE\ >=\ 200112L
+.RE
+.ad
+.SH DESCRIPTION
+These functions return a representation (determined by
+.IR tagp )
+of a quiet NaN.
+If the implementation does not support
+quiet NaNs, these functions return zero.
+.PP
+The call
+.I nan("char-sequence")
+is equivalent to:
+.PP
+.in +4n
+.EX
+strtod("NAN(char-sequence)", NULL);
+.EE
+.in
+.PP
+Similarly, calls to
+.BR nanf ()
+and
+.BR nanl ()
+are equivalent to analogous calls to
+.BR strtof (3)
+and
+.BR strtold (3).
+.PP
+The argument
+.I tagp
+is used in an unspecified manner.
+On IEEE 754 systems, there are many representations of NaN, and
+.I tagp
+selects one.
+On other systems it may do nothing.
+.SH VERSIONS
+These functions first appeared in glibc in version 2.1.
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbw21 lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR nan (),
+.BR nanf (),
+.BR nanl ()
+T}	Thread safety	MT-Safe locale
+.TE
+.SH CONFORMING TO
+C99, POSIX.1-2001, POSIX.1-2008.
+See also IEC 559 and the appendix with
+recommended functions in IEEE 754/IEEE 854.
+.SH SEE ALSO
+.BR isnan (3),
+.BR strtod (3),
+.BR math_error (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

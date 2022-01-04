@@ -1,0 +1,99 @@
+.\" Copyright 2002 Walter Harms(walter.harms@informatik.uni-oldenburg.de)
+.\" and Copyright (C) 2011 Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(GPL_NOVERSION_ONELINE)
+.\" Distributed under GPL
+.\" %%%LICENSE_END
+.\"
+.TH CACOSH 3 2019-03-06 "" "Linux Programmer's Manual"
+.SH NAME
+cacosh, cacoshf, cacoshl \- complex arc hyperbolic cosine
+.SH SYNOPSIS
+.B #include <complex.h>
+.PP
+.BI "double complex cacosh(double complex " z );
+.br
+.BI "float complex cacoshf(float complex " z );
+.br
+.BI "long double complex cacoshl(long double complex " z );
+.PP
+Link with \fI\-lm\fP.
+.SH DESCRIPTION
+These functions calculate the complex arc hyperbolic cosine of
+.IR z .
+If \fIy\ =\ cacosh(z)\fP, then \fIz\ =\ ccosh(y)\fP.
+The imaginary part of
+.I y
+is chosen in the interval [\-pi,pi].
+The real part of
+.I y
+is chosen nonnegative.
+.PP
+One has:
+.PP
+.nf
+    cacosh(z) = 2 * clog(csqrt((z + 1) / 2) + csqrt((z \- 1) / 2))
+.fi
+.SH VERSIONS
+These functions first appeared in glibc in version 2.1.
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbw30 lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR cacosh (),
+.BR cacoshf (),
+.BR cacoshl ()
+T}	Thread safety	MT-Safe
+.TE
+.SH CONFORMING TO
+C99, POSIX.1-2001, POSIX.1-2008.
+.SH EXAMPLE
+.EX
+/* Link with "\-lm" */
+
+#include <complex.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+
+int
+main(int argc, char *argv[])
+{
+    double complex z, c, f;
+
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s <real> <imag>\en", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    z = atof(argv[1]) + atof(argv[2]) * I;
+
+    c = cacosh(z);
+    printf("cacosh() = %6.3f %6.3f*i\en", creal(c), cimag(c));
+
+    f = 2 * clog(csqrt((z + 1)/2) + csqrt((z \- 1)/2));
+    printf("formula  = %6.3f %6.3f*i\en", creal(f2), cimag(f2));
+
+    exit(EXIT_SUCCESS);
+}
+.EE
+.SH SEE ALSO
+.BR acosh (3),
+.BR cabs (3),
+.BR ccosh (3),
+.BR cimag (3),
+.BR complex (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

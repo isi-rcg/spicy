@@ -1,0 +1,63 @@
+.\" Copyright 2002 Walter Harms (walter.harms@informatik.uni-oldenburg.de)
+.\"
+.\" %%%LICENSE_START(GPL_NOVERSION_ONELINE)
+.\" Distributed under GPL
+.\" %%%LICENSE_END
+.\"
+.TH CEXP 3 2017-09-15 "" "Linux Programmer's Manual"
+.SH NAME
+cexp, cexpf, cexpl \- complex exponential function
+.SH SYNOPSIS
+.B #include <complex.h>
+.PP
+.BI "double complex cexp(double complex " z ");"
+.br
+.BI "float complex cexpf(float complex " z ");"
+.br
+.BI "long double complex cexpl(long double complex " z ");"
+.PP
+Link with \fI\-lm\fP.
+.SH DESCRIPTION
+These functions calculate e (2.71828..., the base of natural logarithms)
+raised to the power of
+.IR z .
+.PP
+One has:
+.PP
+.nf
+    cexp(I * z) = ccos(z) + I * csin(z)
+.fi
+.SH VERSIONS
+These functions first appeared in glibc in version 2.1.
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbw24 lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR cexp (),
+.BR cexpf (),
+.BR cexpl ()
+T}	Thread safety	MT-Safe
+.TE
+.sp 1
+.SH CONFORMING TO
+C99, POSIX.1-2001, POSIX.1-2008.
+.SH SEE ALSO
+.BR cabs (3),
+.BR cexp2 (3),
+.BR clog (3),
+.BR cpow (3),
+.BR complex (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

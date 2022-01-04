@@ -1,0 +1,8 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+
+Name: DamageProto
+Description: Damage extension headers
+Version: 1.2.1
+Cflags: -I${includedir}

@@ -1,0 +1,113 @@
+.\" Copyright (c) 1993 by Thomas Koenig (ig25@rz.uni-karlsruhe.de)
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.\" Modified Sat Jul 24 21:42:42 1993 by Rik Faith <faith@cs.unc.edu>
+.\" Modified Tue Oct 22 23:44:11 1996 by Eric S. Raymond <esr@thyrsus.com>
+.\" Modified Thu Jun  2 23:44:11 2016 by Nikos Mavrogiannopoulos <nmav@redhat.com>
+.TH ASSERT 3  2017-09-15 "GNU" "Linux Programmer's Manual"
+.SH NAME
+assert \- abort the program if assertion is false
+.SH SYNOPSIS
+.nf
+.B #include <assert.h>
+.PP
+.BI "void assert(scalar " expression );
+.fi
+.SH DESCRIPTION
+This macro can help programmers find bugs in their programs,
+or handle exceptional cases
+via a crash that will produce limited debugging output.
+.PP
+If
+.I expression
+is false (i.e., compares equal to zero),
+.BR assert ()
+prints an error message to standard error
+and terminates the program by calling
+.BR abort (3).
+The error message includes the name of the file and function containing the
+.BR assert ()
+call, the source code line number of the call, and the text of the argument;
+something like:
+.PP
+    prog: some_file.c:16: some_func: Assertion `val == 0' failed.
+.PP
+If the macro
+.B NDEBUG
+is defined at the moment
+.I <assert.h>
+was last included, the macro
+.BR assert ()
+generates no code, and hence does nothing at all.
+It is not recommended to define
+.B NDEBUG
+if using
+.BR assert ()
+to detect error conditions since the software
+may behave non-deterministically.
+.SH RETURN VALUE
+No value is returned.
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lb lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR assert ()
+T}	Thread safety	MT-Safe
+.TE
+.sp 1
+.SH CONFORMING TO
+POSIX.1-2001, POSIX.1-2008, C89, C99.
+In C89,
+.I expression
+is required to be of type
+.I int
+and undefined behavior results if it is not, but in C99
+it may have any scalar type.
+.\" See Defect Report 107 for more details.
+.SH BUGS
+.BR assert ()
+is implemented as a macro; if the expression tested has side-effects,
+program behavior will be different depending on whether
+.B NDEBUG
+is defined.
+This may create Heisenbugs which go away when debugging
+is turned on.
+.SH SEE ALSO
+.BR abort (3),
+.BR assert_perror (3),
+.BR exit (3)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

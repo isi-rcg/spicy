@@ -1,0 +1,8 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+ 
+Name: RandrProto
+Description: Randr extension headers
+Version: 1.6.0
+Cflags: -I${includedir}

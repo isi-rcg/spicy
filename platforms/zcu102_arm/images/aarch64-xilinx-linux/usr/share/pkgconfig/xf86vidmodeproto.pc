@@ -1,0 +1,8 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+ 
+Name: XF86VidModeProto
+Description: XF86VidMode extension headers
+Version: 2.3.1
+Cflags: -I${includedir}

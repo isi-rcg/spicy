@@ -1,0 +1,13 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+VERSION=0.12.0
+driverdir=$(libdir)/$(PACKAGE_TARNAME)/$(VERSION)
+
+Name: libgphoto2_port
+Description: Device-independent access to serial, USB, and other ports
+URL: http://gphoto.org/proj/libgphoto2/
+Version: 0.12.0
+Libs: -L${libdir} -lgphoto2_port -lm
+Cflags: -I${includedir}/gphoto2

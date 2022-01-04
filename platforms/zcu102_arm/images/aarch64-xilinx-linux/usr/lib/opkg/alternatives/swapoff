@@ -1,0 +1,2 @@
+/sbin/swapoff
+/sbin/swapoff.util-linux 80

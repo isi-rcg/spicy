@@ -1,0 +1,128 @@
+/* List the relocation types for PA-RISC.  -*- C -*-
+   Copyright (C) 2005 Red Hat, Inc.
+   This file is part of Red Hat elfutils.
+
+   Red Hat elfutils is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by the
+   Free Software Foundation; version 2 of the License.
+
+   Red Hat elfutils is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License along
+   with Red Hat elfutils; if not, write to the Free Software Foundation,
+   Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301 USA.
+
+   Red Hat elfutils is an included package of the Open Invention Network.
+   An included package of the Open Invention Network is a package for which
+   Open Invention Network licensees cross-license their patents.  No patent
+   license is granted, either expressly or impliedly, by designation as an
+   included package.  Should you wish to participate in the Open Invention
+   Network licensing program, please visit www.openinventionnetwork.com
+   <http://www.openinventionnetwork.com>.  */
+
+/*	    NAME,		REL|EXEC|DYN	*/
+
+RELOC_TYPE (NONE,		EXEC|DYN)
+RELOC_TYPE (DIR32,		REL|EXEC|DYN)
+RELOC_TYPE (DIR21L,		REL|EXEC|DYN)
+RELOC_TYPE (DIR17R,		REL)
+RELOC_TYPE (DIR17F,		REL)
+RELOC_TYPE (DIR14R,		REL|DYN)
+RELOC_TYPE (PCREL32,		REL)
+RELOC_TYPE (PCREL21L,		REL)
+RELOC_TYPE (PCREL17R,		REL)
+RELOC_TYPE (PCREL17F,		REL)
+RELOC_TYPE (PCREL14R,		REL|EXEC)
+RELOC_TYPE (DPREL21L,		REL)
+RELOC_TYPE (DPREL14WR,		REL)
+RELOC_TYPE (DPREL14DR,          REL)
+RELOC_TYPE (DPREL14R,		REL)
+RELOC_TYPE (GPREL21L,		0)
+RELOC_TYPE (GPREL14R,		0)
+RELOC_TYPE (LTOFF21L,		REL)
+RELOC_TYPE (LTOFF14R,		REL)
+RELOC_TYPE (DLTIND14F,		0)
+RELOC_TYPE (SETBASE,		0)
+RELOC_TYPE (SECREL32,		REL)
+RELOC_TYPE (BASEREL21L,		0)
+RELOC_TYPE (BASEREL17R,		0)
+RELOC_TYPE (BASEREL14R,		0)
+RELOC_TYPE (SEGBASE,		0)
+RELOC_TYPE (SEGREL32,		REL)
+RELOC_TYPE (PLTOFF21L,		0)
+RELOC_TYPE (PLTOFF14R,		0)
+RELOC_TYPE (PLTOFF14F,		0)
+RELOC_TYPE (LTOFF_FPTR32,	0)
+RELOC_TYPE (LTOFF_FPTR21L,	0)
+RELOC_TYPE (LTOFF_FPTR14R,	0)
+RELOC_TYPE (FPTR64,		0)
+RELOC_TYPE (PLABEL32,		REL|DYN)
+RELOC_TYPE (PCREL64,		0)
+RELOC_TYPE (PCREL22C,		0)
+RELOC_TYPE (PCREL22F,		0)
+RELOC_TYPE (PCREL14WR,		0)
+RELOC_TYPE (PCREL14DR,		0)
+RELOC_TYPE (PCREL16F,		0)
+RELOC_TYPE (PCREL16WF,		0)
+RELOC_TYPE (PCREL16DF,		0)
+RELOC_TYPE (DIR64,		REL|DYN)
+RELOC_TYPE (DIR14WR,		REL)
+RELOC_TYPE (DIR14DR,		REL)
+RELOC_TYPE (DIR16F,		REL)
+RELOC_TYPE (DIR16WF,		REL)
+RELOC_TYPE (DIR16DF,		REL)
+RELOC_TYPE (GPREL64,		0)
+RELOC_TYPE (GPREL14WR,		0)
+RELOC_TYPE (GPREL14DR,		0)
+RELOC_TYPE (GPREL16F,		0)
+RELOC_TYPE (GPREL16WF,		0)
+RELOC_TYPE (GPREL16DF,		0)
+RELOC_TYPE (LTOFF64,		0)
+RELOC_TYPE (LTOFF14WR,		0)
+RELOC_TYPE (LTOFF14DR,		0)
+RELOC_TYPE (LTOFF16F,		0)
+RELOC_TYPE (LTOFF16WF,		0)
+RELOC_TYPE (LTOFF16DF,		0)
+RELOC_TYPE (SECREL64,		0)
+RELOC_TYPE (BASEREL14WR,	0)
+RELOC_TYPE (BASEREL14DR,	0)
+RELOC_TYPE (SEGREL64,		0)
+RELOC_TYPE (PLTOFF14WR,		0)
+RELOC_TYPE (PLTOFF14DR,		0)
+RELOC_TYPE (PLTOFF16F,		0)
+RELOC_TYPE (PLTOFF16WF,		0)
+RELOC_TYPE (PLTOFF16DF,		0)
+RELOC_TYPE (LTOFF_FPTR64,	0)
+RELOC_TYPE (LTOFF_FPTR14WR,	0)
+RELOC_TYPE (LTOFF_FPTR14DR,	0)
+RELOC_TYPE (LTOFF_FPTR16F,	0)
+RELOC_TYPE (LTOFF_FPTR16WF,	0)
+RELOC_TYPE (LTOFF_FPTR16DF,	0)
+RELOC_TYPE (COPY,		EXEC)
+RELOC_TYPE (IPLT,		EXEC|DYN)
+RELOC_TYPE (EPLT,		0)
+RELOC_TYPE (TPREL32,		DYN)
+RELOC_TYPE (TPREL21L,		0)
+RELOC_TYPE (TPREL14R,		0)
+RELOC_TYPE (LTOFF_TP21L,	0)
+RELOC_TYPE (LTOFF_TP14R,	0)
+RELOC_TYPE (LTOFF_TP14F,	0)
+RELOC_TYPE (TPREL64,		0)
+RELOC_TYPE (TPREL14WR,		0)
+RELOC_TYPE (TPREL14DR,		0)
+RELOC_TYPE (TPREL16F,		0)
+RELOC_TYPE (TPREL16WF,		0)
+RELOC_TYPE (TPREL16DF,		0)
+RELOC_TYPE (LTOFF_TP64,		0)
+RELOC_TYPE (LTOFF_TP14WR,	0)
+RELOC_TYPE (LTOFF_TP14DR,	0)
+RELOC_TYPE (LTOFF_TP16F,	0)
+RELOC_TYPE (LTOFF_TP16WF,	0)
+RELOC_TYPE (LTOFF_TP16DF,	0)
+RELOC_TYPE (TLS_DTPMOD32,	DYN)
+RELOC_TYPE (TLS_DTPMOD64,	DYN)
+
+#define NO_RELATIVE_RELOC       1

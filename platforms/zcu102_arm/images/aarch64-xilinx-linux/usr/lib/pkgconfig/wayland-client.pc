@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=/usr
+datarootdir=${prefix}/share
+pkgdatadir=${pc_sysrootdir}/usr/share/wayland
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: Wayland Client
+Description: Wayland client side library
+Version: 1.17.0
+Cflags: -I${includedir}
+Libs: -L${libdir} -lwayland-client

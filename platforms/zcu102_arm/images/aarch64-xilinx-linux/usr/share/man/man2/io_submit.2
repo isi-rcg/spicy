@@ -1,0 +1,288 @@
+.\" Copyright (C) 2003 Free Software Foundation, Inc.
+.\" and Copyright (C) 2017 Goldwyn Rodrigues <rgoldwyn@suse.de>
+.\"
+.\" %%%LICENSE_START(GPL_NOVERSION_ONELINE)
+.\" This file is distributed according to the GNU General Public License.
+.\" %%%LICENSE_END
+.\"
+.TH IO_SUBMIT 2 2018-04-30 "Linux" "Linux Programmer's Manual"
+.SH NAME
+io_submit \- submit asynchronous I/O blocks for processing
+.SH SYNOPSIS
+.nf
+.BR "#include <linux/aio_abi.h>" "          /* Defines needed types */"
+.PP
+.BI "int io_submit(aio_context_t " ctx_id ", long " nr \
+", struct iocb **" iocbpp );
+.fi
+.PP
+.IR Note :
+There is no glibc wrapper for this system call; see NOTES.
+.SH DESCRIPTION
+.PP
+The
+.BR io_submit ()
+system call
+queues \fInr\fP I/O request blocks for processing in
+the AIO context \fIctx_id\fP.
+The
+.I iocbpp
+argument should be an array of \fInr\fP AIO control blocks,
+which will be submitted to context \fIctx_id\fP.
+.PP
+The
+.I iocb
+(I/O control block) structure defined in
+.IR linux/aio_abi.h
+defines the parameters that control the I/O operation.
+.PP
+.in +4n
+.EX
+#include <linux/aio_abi.h>
+
+struct iocb {
+    __u64   aio_data;
+    __u32   PADDED(aio_key, aio_rw_flags);
+    __u16   aio_lio_opcode;
+    __s16   aio_reqprio;
+    __u32   aio_fildes;
+    __u64   aio_buf;
+    __u64   aio_nbytes;
+    __s64   aio_offset;
+    __u64   aio_reserved2;
+    __u32   aio_flags;
+    __u32   aio_resfd;
+};
+.EE
+.in
+.PP
+The fields of this structure are as follows:
+.TP
+.I aio_data
+This data is copied into the
+.I data
+field of the
+.I io_event
+structure upon I/O completion (see
+.BR io_getevents (2)).
+.TP
+.I aio_key
+This is an internal field used by the kernel.
+Do not modify this field after an
+.BR io_submit (2)
+call.
+.TP
+.I aio_rw_flags
+This defines the R/W flags passed with structure.
+The valid values are:
+.RS
+.TP
+.BR RWF_APPEND " (since Linux 4.16)"
+.\" commit e1fc742e14e01d84d9693c4aca4ab23da65811fb
+Append data to the end of the file.
+See the description of the flag of the same name in
+.BR pwritev2 (2)
+as well as the description of
+.B O_APPEND
+in
+.BR open (2).
+The
+.I aio_offset
+field is ignored.
+The file offset is not changed.
+.TP
+.BR RWF_DSYNC " (since Linux 4.7)"
+Write operation complete according to requirement of
+synchronized I/O data integrity.
+See the description of the flag of the same name in
+.BR pwritev2 (2)
+as well the description of
+.B O_DSYNC
+in
+.BR open (2).
+.TP
+.BR RWF_HIPRI " (since Linux 4.6)"
+High priority request, poll if possible
+.TP
+.BR RWF_NOWAIT " (since Linux 4.14)"
+Don't wait if the I/O will block for operations such as
+file block allocations, dirty page flush, mutex locks,
+or a congested block device inside the kernel.
+If any of these conditions are met, the control block is returned
+immediately with a return value of
+.B \-EAGAIN
+in the
+.I res
+field of the
+.I io_event
+structure (see
+.BR io_getevents (2)).
+.TP
+.BR RWF_SYNC " (since Linux 4.7)"
+Write operation complete according to requirement of
+synchronized I/O file integrity.
+See the description of the flag of the same name in
+.BR pwritev2 (2)
+as well the description of
+.B O_SYNC
+in
+.BR open (2).
+.RE
+.TP
+.I aio_lio_opcode
+This defines the type of I/O to be performed by the
+.I iocb
+structure.
+The
+valid values are defined by the enum defined in
+.IR linux/aio_abi.h :
+.IP
+.in +4
+.EX
+enum {
+    IOCB_CMD_PREAD = 0,
+    IOCB_CMD_PWRITE = 1,
+    IOCB_CMD_FSYNC = 2,
+    IOCB_CMD_FDSYNC = 3,
+    IOCB_CMD_NOOP = 6,
+    IOCB_CMD_PREADV = 7,
+    IOCB_CMD_PWRITEV = 8,
+};
+.EE
+.in
+.TP
+.I aio_reqprio
+This defines the requests priority.
+.TP
+.I aio_fildes
+The file descriptor on which the I/O operation is to be performed.
+.TP
+.I aio_buf
+This is the buffer used to transfer data for a read or write operation.
+.TP
+.I aio_nbytes
+This is the size of the buffer pointed to by
+.IR aio_buf .
+.TP
+.I aio_offset
+This is the file offset at which the I/O operation is to be performed.
+.TP
+.I aio_flags
+This is the set of flags associated with the
+.I iocb
+structure.
+The valid values are:
+.RS
+.TP
+.BR IOCB_FLAG_RESFD
+Asynchronous I/O control must signal the file
+descriptor mentioned in
+.I aio_resfd
+upon completion.
+.TP
+.BR IOCB_FLAG_IOPRIO " (since Linux 4.18)"
+.\" commit d9a08a9e616beeccdbd0e7262b7225ffdfa49e92
+Interpret the
+.I aio_reqprio
+field as an
+.B IOPRIO_VALUE
+as defined by
+.IR linux/ioprio.h .
+.RE
+.TP
+.I aio_resfd
+The file descriptor to signal in the event of asynchronous I/O completion.
+.SH RETURN VALUE
+On success,
+.BR io_submit ()
+returns the number of \fIiocb\fPs submitted (which may be
+less than \fInr\fP, or 0 if \fInr\fP is zero).
+For the failure return, see NOTES.
+.SH ERRORS
+.TP
+.B EAGAIN
+Insufficient resources are available to queue any \fIiocb\fPs.
+.TP
+.B EBADF
+The file descriptor specified in the first \fIiocb\fP is invalid.
+.TP
+.B EFAULT
+One of the data structures points to invalid data.
+.TP
+.B EINVAL
+The AIO context specified by \fIctx_id\fP is invalid.
+\fInr\fP is less than 0.
+The \fIiocb\fP at
+.I *iocbpp[0]
+is not properly initialized, the operation specified is invalid for the file
+descriptor in the \fIiocb\fP, or the value in the
+.I aio_reqprio
+field is invalid.
+.TP
+.B ENOSYS
+.BR io_submit ()
+is not implemented on this architecture.
+.TP
+.B EPERM
+The
+.I aio_reqprio
+field is set with the class
+.BR IOPRIO_CLASS_RT ,
+but the submitting context does not have the
+.B CAP_SYS_ADMIN
+capability.
+.SH VERSIONS
+.PP
+The asynchronous I/O system calls first appeared in Linux 2.5.
+.SH CONFORMING TO
+.PP
+.BR io_submit ()
+is Linux-specific and should not be used in
+programs that are intended to be portable.
+.SH NOTES
+Glibc does not provide a wrapper function for this system call.
+You could invoke it using
+.BR syscall (2).
+But instead, you probably want to use the
+.BR io_submit ()
+wrapper function provided by
+.\" http://git.fedorahosted.org/git/?p=libaio.git
+.IR libaio .
+.PP
+Note that the
+.I libaio
+wrapper function uses a different type
+.RI ( io_context_t )
+.\" But glibc is confused, since <libaio.h> uses 'io_context_t' to declare
+.\" the system call.
+for the
+.I ctx_id
+argument.
+Note also that the
+.I libaio
+wrapper does not follow the usual C library conventions for indicating errors:
+on error it returns a negated error number
+(the negative of one of the values listed in ERRORS).
+If the system call is invoked via
+.BR syscall (2),
+then the return value follows the usual conventions for
+indicating an error: \-1, with
+.I errno
+set to a (positive) value that indicates the error.
+.SH SEE ALSO
+.BR io_cancel (2),
+.BR io_destroy (2),
+.BR io_getevents (2),
+.BR io_setup (2),
+.BR aio (7)
+.\" .SH AUTHOR
+.\" Kent Yoder.
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

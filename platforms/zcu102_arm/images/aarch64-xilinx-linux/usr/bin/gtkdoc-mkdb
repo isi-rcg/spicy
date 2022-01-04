@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+# -*- python; coding: utf-8 -*-
+#
+# gtk-doc - GTK DocBook documentation generator.
+# Copyright (C) 1998  Damon Chaplin
+#               2007-2016  Stefan Sauer
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+
+from __future__ import print_function
+
+import argparse
+import sys
+sys.path.append('/usr/share/gtk-doc/python')
+
+from gtkdoc import common, config, mkdb
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--version', action='version', version=config.version)
+    parser.add_argument('--module', required=True,
+                        help='Name of the doc module being parsed')
+    parser.add_argument('--source-dir', action='append', dest='source_dir', default=[])
+    parser.add_argument('--source-suffixes', dest='source_suffixes', default='')
+    parser.add_argument('--ignore-files', dest='ignore_files', default='')
+    parser.add_argument('--output-dir', dest='output_dir', default='')
+    parser.add_argument('--tmpl-dir', dest='tmpl_dir', help="DEPRECATED")
+    parser.add_argument('--main-sgml-file', dest='main_sgml_file', default='')
+    parser.add_argument('--expand-content-files', dest='expand_content_files', default='')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--sgml-mode', action='store_true', default=False, dest='sgml_mode')
+    group.add_argument('--xml-mode', action='store_true', default=False, dest='xml_mode')
+    parser.add_argument('--default-stability', dest='default_stability',
+                        choices=['', 'Stable', 'Private', 'Unstable'], default='')
+    parser.add_argument('--default-includes', dest='default_includes', default='')
+    parser.add_argument('--output-format', default='xml')  # MUST be 'xml', deprecate?
+    parser.add_argument('--name-space', dest='name_space', default='')
+    parser.add_argument('--outputallsymbols', default=False, action='store_true')
+    parser.add_argument('--outputsymbolswithoutsince', default=False, action='store_true')
+
+    options = parser.parse_args()
+
+    if options.output_format != "xml":
+        sys.exit('Invalid format "%s" passed to --output.format' % options.output_format)
+
+    common.setup_logging()
+
+    mkdb.Run(options)

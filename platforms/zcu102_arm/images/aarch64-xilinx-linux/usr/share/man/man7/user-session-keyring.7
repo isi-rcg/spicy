@@ -1,0 +1,107 @@
+.\"
+.\" Copyright (C) 2014 Red Hat, Inc. All Rights Reserved.
+.\" Written by David Howells (dhowells@redhat.com)
+.\"
+.\" %%%LICENSE_START(GPLv2+_SW_ONEPARA)
+.\" This program is free software; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License
+.\" as published by the Free Software Foundation; either version
+.\" 2 of the License, or (at your option) any later version.
+.\" %%%LICENSE_END
+.\"
+.TH "USER-SESSION-KEYRING" 7 2017-03-13 Linux "Linux Programmer's Manual"
+.SH NAME
+user-session-keyring \- per-user default session keyring
+.SH DESCRIPTION
+The user session keyring is a keyring used to anchor keys on behalf of a user.
+Each UID the kernel deals with has its own user session keyring that
+is shared by all processes with that UID.
+The user session keyring has a name (description) of the form
+.I _uid_ses.<UID>
+where
+.I <UID>
+is the user ID of the corresponding user.
+.PP
+The user session keyring is associated with the record that
+the kernel maintains for the UID.
+It comes into existence upon the first attempt to access either the
+user session keyring, the
+.BR user-keyring (7),
+or the
+.BR session-keyring (7).
+.\" Davis Howells: the user and user-session keyrings are managed as a pair.
+The keyring remains pinned in existence so long as there are processes
+running with that real UID or files opened by those processes remain open.
+(The keyring can also be pinned indefinitely by linking it
+into another keyring.)
+.PP
+The user session keyring is created on demand when a thread requests it
+or when a thread asks for its
+.BR session-keyring (7)
+and that keyring doesn't exist.
+In the latter case, a user session keyring will be created and,
+if the session keyring wasn't to be created,
+the user session keyring will be set as the process's actual session keyring.
+.PP
+The user session keyring is searched by
+.BR request_key (2)
+if the actual session keyring does not exist and is ignored otherwise.
+.PP
+A special serial number value,
+.BR KEY_SPEC_USER_SESSION_KEYRING ,
+is defined
+that can be used in lieu of the actual serial number of
+the calling process's user session keyring.
+.PP
+From the
+.BR keyctl (1)
+utility, '\fB@us\fP' can be used instead of a numeric key ID in
+much the same way.
+.PP
+User session keyrings are independent of
+.BR clone (2),
+.BR fork (2),
+.BR vfork (2),
+.BR execve (2),
+and
+.BR _exit (2)
+excepting that the keyring is destroyed when the UID record is destroyed
+when the last process pinning it exits.
+.PP
+If a user session keyring does not exist when it is accessed,
+it will be created.
+.PP
+Rather than relying on the user session keyring,
+it is strongly recommended\(emespecially if the process
+is running as root\(emthat a
+.BR session-keyring (7)
+be set explicitly, for example by
+.BR pam_keyinit (8).
+.SH NOTES
+The user session keyring was added to support situations where
+a process doesn't have a session keyring,
+perhaps because it was created via a pathway that didn't involve PAM
+(e.g., perhaps it was a daemon started by
+.BR inetd (8)).
+In such a scenario, the user session keyring acts as a substitute for the
+.BR session-keyring (7).
+.SH SEE ALSO
+.ad l
+.nh
+.BR keyctl (1),
+.BR keyctl (3),
+.BR keyrings (7),
+.BR persistent\-keyring (7),
+.BR process\-keyring (7),
+.BR session\-keyring (7),
+.BR thread\-keyring (7),
+.BR user\-keyring (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

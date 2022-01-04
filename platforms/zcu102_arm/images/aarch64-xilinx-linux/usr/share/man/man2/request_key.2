@@ -1,0 +1,581 @@
+.\" Copyright (C) 2006 Red Hat, Inc. All Rights Reserved.
+.\"     Written by David Howells (dhowells@redhat.com)
+.\" and Copyright (C) 2016 Michael Kerrisk <mtk.man-pages@gmail.com>
+.\"
+.\" %%%LICENSE_START(GPLv2+_SW_ONEPARA)
+.\" This program is free software; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License
+.\" as published by the Free Software Foundation; either version
+.\" 2 of the License, or (at your option) any later version.
+.\" %%%LICENSE_END
+.\"
+.TH REQUEST_KEY 2 2019-03-06 Linux "Linux Key Management Calls"
+.SH NAME
+request_key \- request a key from the kernel's key management facility
+.SH SYNOPSIS
+.nf
+.B #include <sys/types.h>
+.B #include <keyutils.h>
+.PP
+.BI "key_serial_t request_key(const char *" type ", const char *" description ,
+.BI "                         const char *" callout_info ,
+.BI "                         key_serial_t " dest_keyring ");"
+.fi
+.PP
+No glibc wrapper is provided for this system call; see NOTES.
+.SH DESCRIPTION
+.BR request_key ()
+attempts to find a key of the given
+.I type
+with a description (name) that matches the specified
+.IR description .
+If such a key could not be found, then the key is optionally created.
+If the key is found or created,
+.BR request_key ()
+attaches it to the keyring whose ID is specified in
+.I dest_keyring
+and returns the key's serial number.
+.PP
+.BR request_key ()
+first recursively searches for a matching key in all of the keyrings
+attached to the calling process.
+The keyrings are searched in the order: thread-specific keyring,
+process-specific keyring, and then session keyring.
+.PP
+If
+.BR request_key ()
+is called from a program invoked by
+.BR request_key ()
+on behalf of some other process to generate a key, then the keyrings of that
+other process will be searched next,
+using that other process's user ID, group ID,
+supplementary group IDs, and security context to determine access.
+.\" David Howells: we can then have an arbitrarily long sequence
+.\" of "recursive" request-key upcalls. There is no limit, other
+.\" than number of PIDs, etc.
+.PP
+The search of the keyring tree is breadth-first:
+the keys in each keyring searched are checked for a match before any child
+keyrings are recursed into.
+Only keys for which the caller has
+.I search
+permission be found, and only keyrings for which the caller has
+.I search
+permission may be searched.
+.PP
+If the key is not found and
+.I callout
+is NULL, then the call fails with the error
+.BR ENOKEY .
+.PP
+If the key is not found and
+.I callout
+is not NULL, then the kernel attempts to invoke a user-space
+program to instantiate the key.
+The details are given below.
+.PP
+The
+.I dest_keyring
+serial number may be that of a valid keyring for which the caller has
+.I write
+permission, or it may be one of the following special keyring IDs:
+.TP
+.B KEY_SPEC_THREAD_KEYRING
+This specifies the caller's thread-specific keyring (see
+.BR thread-keyring (7)).
+.TP
+.B KEY_SPEC_PROCESS_KEYRING
+This specifies the caller's process-specific keyring (see
+.BR process-keyring (7)).
+.TP
+.B KEY_SPEC_SESSION_KEYRING
+This specifies the caller's session-specific keyring (see
+.BR session-keyring (7)).
+.TP
+.B KEY_SPEC_USER_KEYRING
+This specifies the caller's UID-specific keyring (see
+.BR user-keyring (7)).
+.TP
+.B KEY_SPEC_USER_SESSION_KEYRING
+This specifies the caller's UID-session keyring (see
+.BR user-session-keyring (7)).
+.PP
+When the
+.I dest_keyring
+is specified as 0
+and no key construction has been performed,
+then no additional linking is done.
+.PP
+Otherwise, if
+.I dest_keyring
+is 0 and a new key is constructed, the new key will be linked
+to the "default" keyring.
+More precisely, when the kernel tries to determine to which keyring the
+newly constructed key should be linked,
+it tries the following keyrings,
+beginning with the keyring set via the
+.BR keyctl (2)
+.BR KEYCTL_SET_REQKEY_KEYRING
+operation and continuing in the order shown below
+until it finds the first keyring that exists:
+.IP \(bu 3
+.\" 8bbf4976b59fc9fc2861e79cab7beb3f6d647640
+The requestor keyring
+.RB ( KEY_REQKEY_DEFL_REQUESTOR_KEYRING ,
+since Linux 2.6.29).
+.\" FIXME
+.\" Actually, is the preceding point correct?
+.\" If I understand correctly, we'll only get here if
+.\" 'dest_keyring' is zero, in which case KEY_REQKEY_DEFL_REQUESTOR_KEYRING
+.\" won't refer to a keyring. Have I misunderstood?
+.IP \(bu
+The thread-specific keyring
+.RB ( KEY_REQKEY_DEFL_THREAD_KEYRING ;
+see
+.BR thread-keyring (7)).
+.IP \(bu
+The process-specific keyring
+.RB ( KEY_REQKEY_DEFL_PROCESS_KEYRING ;
+see
+.BR process-keyring (7)).
+.IP \(bu
+The session-specific keyring
+.RB ( KEY_REQKEY_DEFL_SESSION_KEYRING ;
+see
+.BR session-keyring (7)).
+.IP \(bu
+The session keyring for the process's user ID
+.RB ( KEY_REQKEY_DEFL_USER_SESSION_KEYRING ;
+see
+.BR user-session-keyring (7)).
+This keyring is expected to always exist.
+.IP \(bu
+The UID-specific keyring
+.RB ( KEY_REQKEY_DEFL_USER_KEYRING ;
+see
+.BR user-keyring (7)).
+This keyring is also expected to always exist.
+.\" mtk: Are there circumstances where the user sessions and UID-specific
+.\" keyrings do not exist?
+.\"
+.\" David Howells:
+.\"     The uid keyrings don't exist until someone tries to access them -
+.\"     at which point they're both created.  When you log in, pam_keyinit
+.\"     creates a link to your user keyring in the session keyring it just
+.\"     created, thereby creating the user and user-session keyrings.
+.\"
+.\" and David elaborated that "access" means:
+.\"
+.\"     It means lookup_user_key() was passed KEY_LOOKUP_CREATE.  So:
+.\"
+.\"         add_key() - destination keyring
+.\"         request_key() - destination keyring
+.\"         KEYCTL_GET_KEYRING_ID - if create arg is true
+.\"         KEYCTL_CLEAR
+.\"         KEYCTL_LINK - both args
+.\"         KEYCTL_SEARCH - destination keyring
+.\"         KEYCTL_CHOWN
+.\"         KEYCTL_SETPERM
+.\"         KEYCTL_SET_TIMEOUT
+.\"         KEYCTL_INSTANTIATE - destination keyring
+.\"         KEYCTL_INSTANTIATE_IOV - destination keyring
+.\"         KEYCTL_NEGATE - destination keyring
+.\"         KEYCTL_REJECT - destination keyring
+.\"         KEYCTL_GET_PERSISTENT - destination keyring
+.\"
+.\"     will all create a keyring under some circumstances.  Whereas the rest,
+.\"     such as KEYCTL_GET_SECURITY, KEYCTL_READ and KEYCTL_REVOKE, won't.
+.PP
+If the
+.BR keyctl (2)
+.BR KEYCTL_SET_REQKEY_KEYRING
+operation specifies
+.BR KEY_REQKEY_DEFL_DEFAULT
+(or no
+.BR KEYCTL_SET_REQKEY_KEYRING
+operation is performed),
+then the kernel looks for a keyring
+starting from the beginning of the list.
+.\"
+.SS Requesting user-space instantiation of a key
+If the kernel cannot find a key matching
+.IR type
+and
+.IR description ,
+and
+.I callout
+is not NULL, then the kernel attempts to invoke a user-space
+program to instantiate a key with the given
+.IR type
+and
+.IR description .
+In this case, the following steps are performed:
+.IP a) 4
+The kernel creates an uninstantiated key, U, with the requested
+.I type
+and
+.IR description .
+.IP b)
+The kernel creates an authorization key, V,
+.\" struct request_key_auth, defined in security/keys/internal.h
+that refers to the key U and records the facts that the caller of
+.BR request_key ()
+is:
+.RS
+.IP (1) 4
+the context in which the key U should be instantiated and secured, and
+.IP (2)
+the context from which associated key requests may be satisfied.
+.RE
+.IP
+The authorization key is constructed as follows:
+.RS
+.IP * 3
+The key type is
+.IR """.request_key_auth""" .
+.IP *
+The key's UID and GID are the same as the corresponding filesystem IDs
+of the requesting process.
+.IP *
+The key grants
+.IR view ,
+.IR read ,
+and
+.IR search
+permissions to the key possessor as well as
+.IR view
+permission for the key user.
+.IP *
+The description (name) of the key is the hexadecimal
+string representing the ID of the key that is to be instantiated
+in the requesting program.
+.IP *
+The payload of the key is taken from the data specified in
+.IR callout_info .
+.IP *
+Internally, the kernel also records the PID of the process that called
+.BR request_key ().
+.RE
+.IP c)
+The kernel creates a process that executes a user-space service such as
+.BR request-key (8)
+with a new session keyring that contains a link to the authorization key, V.
+.\" The request-key(8) program can be invoked in circumstances *other* than
+.\" when triggered by request_key(2). For example, upcalls from places such
+.\" as the DNS resolver.
+.IP
+This program is supplied with the following command-line arguments:
+.RS
+.IP [0] 4
+The string
+.IR """/sbin/request-key""" .
+.IP [1]
+The string
+.I """create"""
+(indicating that a key is to be created).
+.IP [2]
+The ID of the key that is to be instantiated.
+.IP [3]
+The filesystem UID of the caller of
+.BR request_key ().
+.IP [4]
+The filesystem GID of the caller of
+.BR request_key ().
+.IP [5]
+The ID of the thread keyring of the caller of
+.BR request_key ().
+This may be zero if that keyring hasn't been created.
+.IP [6]
+The ID of the process keyring of the caller of
+.BR request_key ().
+This may be zero if that keyring hasn't been created.
+.IP [7]
+The ID of the session keyring of the caller of
+.BR request_key ().
+.RE
+.IP
+.IR Note :
+each of the command-line arguments that is a key ID is encoded in
+.IR decimal
+(unlike the key IDs shown in
+.IR /proc/keys ,
+which are shown as hexadecimal values).
+.IP d)
+The program spawned in the previous step:
+.RS
+.IP * 3
+Assumes the authority to instantiate the key U using the
+.BR keyctl (2)
+.BR KEYCTL_ASSUME_AUTHORITY
+operation (typically via the
+.BR keyctl_assume_authority (3)
+function).
+.IP *
+Obtains the callout data from the payload of the authorization key V
+(using the
+.BR keyctl (2)
+.BR KEYCTL_READ
+operation (or, more commonly, the
+.BR keyctl_read (3)
+function) with a key ID value of
+.BR KEY_SPEC_REQKEY_AUTH_KEY ).
+.IP *
+Instantiates the key
+(or execs another program that performs that task),
+specifying the payload and destination keyring.
+(The destination keyring that the requestor specified when calling
+.BR request_key ()
+can be accessed using the special key ID
+.BR KEY_SPEC_REQUESTOR_KEYRING .)
+.\" Should an instantiating program be using KEY_SPEC_REQUESTOR_KEYRING?
+.\" I couldn't find a use in the keyutils git repo.
+.\" According to David Howells:
+.\" * This feature is provided, but not used at the moment.
+.\" * A key added to that ring is then owned by the requester
+Instantiation is performed using the
+.BR keyctl (2)
+.BR KEYCTL_INSTANTIATE
+operation (or, more commonly, the
+.BR keyctl_instantiate (3)
+function).
+At this point, the
+.BR request_key ()
+call completes, and the requesting program can continue execution.
+.RE
+.PP
+If these steps are unsuccessful, then an
+.BR ENOKEY
+error will be returned to the caller of
+.BR request_key ()
+and a temporary, negatively instantiated key will be installed
+in the keyring specified by
+.IR dest_keyring .
+This will expire after a few seconds, but will cause subsequent calls to
+.BR request_key ()
+to fail until it does.
+The purpose of this negatively instantiated key is to prevent
+(possibly different) processes making repeated requests
+(that require expensive
+.BR request-key (8)
+upcalls) for a key that can't (at the moment) be positively instantiated.
+.PP
+Once the key has been instantiated, the authorization key
+.RB ( KEY_SPEC_REQKEY_AUTH_KEY )
+is revoked, and the destination keyring
+.RB ( KEY_SPEC_REQUESTOR_KEYRING )
+is no longer accessible from the
+.BR request-key (8)
+program.
+.PP
+If a key is created, then\(emregardless of whether it is a valid key or
+a negatively instantiated key\(emit will displace any other key with
+the same type and description from the keyring specified in
+.IR dest_keyring .
+.SH RETURN VALUE
+On success,
+.BR request_key ()
+returns the serial number of the key it found or caused to be created.
+On error, \-1 is returned and
+.I errno
+is set to indicate the cause of the error.
+.SH ERRORS
+.TP
+.B EACCES
+The keyring wasn't available for modification by the user.
+.TP
+.B EDQUOT
+The key quota for this user would be exceeded by creating this key or linking
+it to the keyring.
+.TP
+.B EFAULT
+One of
+.IR type ,
+.IR description ,
+or
+.IR callout_info
+points outside the process's accessible address space.
+.TP
+.B EINTR
+The request was interrupted by a signal; see
+.BR signal (7).
+.TP
+.B EINVAL
+The size of the string (including the terminating null byte) specified in
+.I type
+or
+.I description
+exceeded the limit (32 bytes and 4096 bytes respectively).
+.TP
+.B EINVAL
+The size of the string (including the terminating null byte) specified in
+.I callout_info
+exceeded the system page size.
+.TP
+.B EKEYEXPIRED
+An expired key was found, but no replacement could be obtained.
+.TP
+.B EKEYREJECTED
+The attempt to generate a new key was rejected.
+.TP
+.B EKEYREVOKED
+A revoked key was found, but no replacement could be obtained.
+.TP
+.B ENOKEY
+No matching key was found.
+.TP
+.B ENOMEM
+Insufficient memory to create a key.
+.TP
+.B EPERM
+The
+.I type
+argument started with a period (\(aq.\(aq).
+.SH VERSIONS
+This system call first appeared in Linux 2.6.10.
+The ability to instantiate keys upon request was added
+.\" commit 3e30148c3d524a9c1c63ca28261bc24c457eb07a
+in Linux 2.6.13.
+.SH CONFORMING TO
+This system call is a nonstandard Linux extension.
+.SH NOTES
+No wrapper for this system call is provided in glibc.
+A wrapper is provided in the
+.IR libkeyutils
+package.
+When employing the wrapper in that library, link with
+.IR \-lkeyutils .
+.SH EXAMPLE
+The program below demonstrates the use of
+.BR request_key ().
+The
+.IR type ,
+.IR description ,
+and
+.IR callout_info
+arguments for the system call are taken from the values
+supplied in the command-line arguments.
+The call specifies the session keyring as the target keyring.
+.PP
+In order to demonstrate this program,
+we first create a suitable entry in the file
+.IR /etc/request-key.conf .
+.PP
+.in +4n
+.EX
+$ sudo sh
+# \fBecho 'create user mtk:* *   /bin/keyctl instantiate %k %c %S' \e\fP
+          \fB> /etc/request-key.conf\fP
+# \fBexit\fP
+.EE
+.in
+.PP
+This entry specifies that when a new "user" key with the prefix
+"mtk:" must be instantiated, that task should be performed via the
+.BR keyctl (1)
+command's
+.B instantiate
+operation.
+The arguments supplied to the
+.B instantiate
+operation are:
+the ID of the uninstantiated key
+.RI ( %k );
+the callout data supplied to the
+.BR request_key ()
+call
+.RI ( %c );
+and the session keyring
+.RI ( %S )
+of the requestor (i.e., the caller of
+.BR request_key ()).
+See
+.BR request-key.conf (5)
+for details of these
+.I %
+specifiers.
+.PP
+Then we run the program and check the contents of
+.IR /proc/keys
+to verify that the requested key has been instantiated:
+.PP
+.in +4n
+.EX
+$ \fB./t_request_key user mtk:key1 "Payload data"\fP
+$ \fBgrep \(aq2dddaf50\(aq /proc/keys\fP
+2dddaf50 I--Q---  1 perm 3f010000  1000  1000 user  mtk:key1: 12
+.EE
+.in
+.PP
+For another example of the use of this program, see
+.BR keyctl (2).
+.SS Program source
+\&
+.EX
+/* t_request_key.c */
+
+#include <sys/types.h>
+#include <keyutils.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int
+main(int argc, char *argv[])
+{
+    key_serial_t key;
+
+    if (argc != 4) {
+        fprintf(stderr, "Usage: %s type description callout\-data\en",
+                argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    key = request_key(argv[1], argv[2], argv[3],
+                      KEY_SPEC_SESSION_KEYRING);
+    if (key == \-1) {
+        perror("request_key");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Key ID is %lx\en", (long) key);
+
+    exit(EXIT_SUCCESS);
+}
+.EE
+.SH SEE ALSO
+.ad l
+.nh
+.BR keyctl (1),
+.BR add_key (2),
+.BR keyctl (2),
+.BR keyctl (3),
+.BR capabilities (7),
+.BR keyrings (7),
+.BR keyutils (7),
+.BR persistent\-keyring (7),
+.BR process\-keyring (7),
+.BR session\-keyring (7),
+.BR thread\-keyring (7),
+.BR user\-keyring (7),
+.BR user\-session\-keyring (7),
+.BR request\-key (8)
+.PP
+The kernel source files
+.IR Documentation/security/keys/core.rst
+and
+.IR Documentation/keys/request\-key.rst
+(or, before Linux 4.13, in the files
+.\" commit b68101a1e8f0263dbc7b8375d2a7c57c6216fb76
+.IR Documentation/security/keys.txt
+and
+.\" commit 3db38ed76890565772fcca3279cc8d454ea6176b
+.IR Documentation/security/keys\-request\-key.txt ).
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

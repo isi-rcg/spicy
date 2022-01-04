@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+# -*- python -*-
+#
+# gtk-doc - GTK DocBook documentation generator.
+# Copyright (C) 1998  Damon Chaplin
+#               2007  David Necas (Yeti)
+#               2007-2016  Stefan Sauer
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+
+import argparse
+import sys
+sys.path.append('/usr/share/gtk-doc/python')
+
+from gtkdoc import common, config, rebase
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='gtkdoc-rebase version %s - rewrite links in html docs' % config.version)
+    parser.add_argument('--version', action='version', version=config.version)
+    parser.add_argument('--html-dir', required=True,
+                        help='The directory which contains the installed HTML')
+    parser.add_argument('--other-dir', default=[], action='append',
+                        help='Directories to recursively scan for indices (*.devhelp2).'
+                        'May be used more than once for multiple directories.')
+    parser.add_argument('--dest-dir', default='',
+                        help='Staging area virtual root, this prefix will be removed'
+                        'from HTML_DIR for relative link calculation.')
+    parser.add_argument('--aggressive', action='store_true', default=False,
+                        help='Rebase links to all files that are under a directory matching a package name.')
+    parser.add_argument('--verbose', action='store_true', default=False,
+                        help='Print extra output while processing')
+    parser.add_argument('--online', action='store_true', default=False,
+                        help='Prefer cross-references to online documents')
+    parser.add_argument('--relative', action='store_true', default=False,
+                        help='Prefer relative cross-references')
+
+    options = parser.parse_args()
+
+    common.setup_logging()
+
+    sys.exit(rebase.run(options))

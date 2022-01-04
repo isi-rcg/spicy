@@ -1,0 +1,14 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+libdir=/usr/lib
+host=aarch64-xilinx-linux-gnu
+api_version=1
+
+Name: gpgme-glib
+Description: GnuPG Made Easy to access GnuPG with Glib
+Requires: gpg-error, libassuan, glib-2.0
+Version: 1.13.1-unknown
+Cflags: 
+Libs: -lgpgme
+URL: https://www.gnupg.org/software/gpgme/index.html

@@ -1,0 +1,380 @@
+.\" Copyright (C) 2007 Michael Kerrisk <mtk.manpages@gmail.com>
+.\" and Copyright (C) 1995 Michael Shields <shields@tembel.org>.
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and author of this work.
+.\" %%%LICENSE_END
+.\"
+.\" Modified 1996-10-22 by Eric S. Raymond <esr@thyrsus.com>
+.\" Modified 1997-05-31 by Andries Brouwer <aeb@cwi.nl>
+.\" Modified 2003-08-24 by Andries Brouwer <aeb@cwi.nl>
+.\" Modified 2004-08-16 by Andi Kleen <ak@muc.de>
+.\" 2007-06-02, mtk: Fairly substantial rewrites and additions, and
+.\" a much improved example program.
+.\"
+.TH MPROTECT 2 2019-03-06 "Linux" "Linux Programmer's Manual"
+.SH NAME
+mprotect, pkey_mprotect \- set protection on a region of memory
+.SH SYNOPSIS
+.nf
+.B #include <sys/mman.h>
+.PP
+.BI "int mprotect(void *" addr ", size_t " len ", int " prot );
+.BI "int pkey_mprotect(void *" addr ", size_t " len ", int " prot ", int " pkey ");
+.fi
+.SH DESCRIPTION
+.BR mprotect ()
+changes the access protections for the calling process's memory pages
+containing any part of the address range in the
+interval [\fIaddr\fP,\ \fIaddr\fP+\fIlen\fP\-1].
+.I addr
+must be aligned to a page boundary.
+.PP
+If the calling process tries to access memory in a manner
+that violates the protections, then the kernel generates a
+.B SIGSEGV
+signal for the process.
+.PP
+.I prot
+is a combination of the following access flags:
+.B PROT_NONE
+or a bitwise-or of the other values in the following list:
+.TP 1.1i
+.B PROT_NONE
+The memory cannot be accessed at all.
+.TP
+.B PROT_READ
+The memory can be read.
+.TP
+.B PROT_WRITE
+The memory can be modified.
+.TP
+.B PROT_EXEC
+The memory can be executed.
+.TP
+.BR PROT_SEM " (since Linux 2.5.7)"
+The memory can be used for atomic operations.
+This flag was introduced as part of the
+.BR futex (2)
+implementation (in order to guarantee the ability to perform atomic
+operations required by commands such as
+.BR FUTEX_WAIT ),
+but is not currently used in on any architecture.
+.TP
+.BR PROT_SAO " (since Linux 2.6.26)"
+.\" commit aba46c5027cb59d98052231b36efcbbde9c77a1d
+.\" commit ef3d3246a0d06be622867d21af25f997aeeb105f
+The memory should have strong access ordering.
+This feature is specific to
+the PowerPC architecture
+(version 2.06 of the architecture specification adds the SAO CPU feature,
+and it is available on POWER 7 or PowerPC A2, for example).
+.PP
+Additionally (since Linux 2.6.0),
+.I prot
+can have one of the following flags set:
+.TP 1.1i
+.\" mm/mmap.c:
+.\"	vm_flags |= calc_vm_prot_bits(prot, pkey) | calc_vm_flag_bits(flags) |
+.\"			mm->def_flags | VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC;
+.\" And calc_vm_flag_bits converts only GROWSDOWN/DENYWRITE/LOCKED.
+.B PROT_GROWSUP
+Apply the protection mode up to the end of a mapping
+that grows upwards.
+(Such mappings are created for the stack area on
+architectures\(emfor example, HP-PARISC\(emthat
+have an upwardly growing stack.)
+.\" The VMA is one that was marked with VM_GROWSUP by the kernel
+.\" when the stack was created. Note that (unlike VM_GROWSDOWN),
+.\" there is no mmap() flag (analogous to MAP_GROWSDOWN) for
+.\" creating a VMA that is marked VM_GROWSUP.
+.TP
+.B PROT_GROWSDOWN
+Apply the protection mode down to the beginning of a mapping
+that grows downward
+(which should be a stack segment or a segment mapped with the
+.B MAP_GROWSDOWN
+flag set).
+.PP
+Like
+.BR mprotect (),
+.BR pkey_mprotect ()
+changes the protection on the pages specified by
+.IR addr
+and
+.IR len .
+The
+.I pkey
+argument specifies the protection key (see
+.BR pkeys (7))
+to assign to the memory.
+The protection key must be allocated with
+.BR pkey_alloc (2)
+before it is passed to
+.BR pkey_mprotect ().
+For an example of the use of this system call, see
+.BR pkeys (7).
+.SH RETURN VALUE
+On success,
+.BR mprotect ()
+and
+.BR pkey_mprotect ()
+return zero.
+On error, these system calls return \-1, and
+.I errno
+is set appropriately.
+.SH ERRORS
+.TP
+.B EACCES
+The memory cannot be given the specified access.
+This can happen, for example, if you
+.BR mmap (2)
+a file to which you have read-only access, then ask
+.BR mprotect ()
+to mark it
+.BR PROT_WRITE .
+.TP
+.B EINVAL
+\fIaddr\fP is not a valid pointer,
+or not a multiple of the system page size.
+.TP
+.BR EINVAL
+.RB ( pkey_mprotect ())
+\fIpkey\fP has not been allocated with
+.BR pkey_alloc (2)
+.TP
+.BR EINVAL
+Both
+.BR PROT_GROWSUP
+and
+.BR PROT_GROWSDOWN
+were specified in
+.IR prot .
+.TP
+.BR EINVAL
+Invalid flags specified in
+.IR prot .
+.TP
+.BR EINVAL
+(PowerPC architecture)
+.B PROT_SAO
+was specified in
+.IR prot ,
+but SAO hardware feature is not available.
+.TP
+.B ENOMEM
+Internal kernel structures could not be allocated.
+.TP
+.B ENOMEM
+Addresses in the range
+.RI [ addr ,
+.IR addr + len \-1]
+are invalid for the address space of the process,
+or specify one or more pages that are not mapped.
+(Before kernel 2.4.19, the error
+.BR EFAULT
+was incorrectly produced for these cases.)
+.TP
+.B ENOMEM
+Changing the protection of a memory region would result in the total number of
+mappings with distinct attributes (e.g., read versus read/write protection)
+exceeding the allowed maximum.
+.\" I.e., the number of VMAs would exceed the 64 kB maximum
+(For example, making the protection of a range
+.BR PROT_READ
+in the middle of a region currently protected as
+.BR PROT_READ|PROT_WRITE
+would result in three mappings:
+two read/write mappings at each end and a read-only mapping in the middle.)
+.SH VERSIONS
+.BR pkey_mprotect ()
+first appeared in Linux 4.9;
+library support was added in glibc 2.27.
+.SH CONFORMING TO
+.BR mprotect ():
+POSIX.1-2001, POSIX.1-2008, SVr4.
+.\" SVr4 defines an additional error
+.\" code EAGAIN. The SVr4 error conditions don't map neatly onto Linux's.
+POSIX says that the behavior of
+.BR mprotect ()
+is unspecified if it is applied to a region of memory that
+was not obtained via
+.BR mmap (2).
+.PP
+.BR pkey_mprotect ()
+is a nonportable Linux extension.
+.SH NOTES
+On Linux, it is always permissible to call
+.BR mprotect ()
+on any address in a process's address space (except for the
+kernel vsyscall area).
+In particular, it can be used
+to change existing code mappings to be writable.
+.PP
+Whether
+.B PROT_EXEC
+has any effect different from
+.B PROT_READ
+depends on processor architecture, kernel version, and process state.
+If
+.B READ_IMPLIES_EXEC
+is set in the process's personality flags (see
+.BR personality (2)),
+specifying
+.B PROT_READ
+will implicitly add
+.BR PROT_EXEC .
+.PP
+On some hardware architectures (e.g., i386),
+.B PROT_WRITE
+implies
+.BR PROT_READ .
+.PP
+POSIX.1 says that an implementation may permit access
+other than that specified in
+.IR prot ,
+but at a minimum can allow write access only if
+.B PROT_WRITE
+has been set, and must not allow any access if
+.B PROT_NONE
+has been set.
+.PP
+Applications should be careful when mixing use of
+.BR mprotect ()
+and
+.BR pkey_mprotect ().
+On x86, when
+.BR mprotect ()
+is used with
+.IR prot
+set to
+.B PROT_EXEC
+a pkey is may be allocated and set on the memory implicitly
+by the kernel, but only when the pkey was 0 previously.
+.PP
+On systems that do not support protection keys in hardware,
+.BR pkey_mprotect ()
+may still be used, but
+.IR pkey
+must be set to 0.
+When called this way, the operation of
+.BR pkey_mprotect ()
+is equivalent to
+.BR mprotect ().
+.SH EXAMPLE
+.\" sigaction.2 refers to this example
+.PP
+The program below demonstrates the use of
+.BR mprotect ().
+The program allocates four pages of memory, makes the third
+of these pages read-only, and then executes a loop that walks upward
+through the allocated region modifying bytes.
+.PP
+An example of what we might see when running the program is the
+following:
+.PP
+.in +4n
+.EX
+.RB "$" " ./a.out"
+Start of region:        0x804c000
+Got SIGSEGV at address: 0x804e000
+.EE
+.in
+.SS Program source
+\&
+.EX
+#include <unistd.h>
+#include <signal.h>
+#include <stdio.h>
+#include <malloc.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <sys/mman.h>
+
+#define handle_error(msg) \e
+    do { perror(msg); exit(EXIT_FAILURE); } while (0)
+
+static char *buffer;
+
+static void
+handler(int sig, siginfo_t *si, void *unused)
+{
+    /* Note: calling printf() from a signal handler is not safe
+       (and should not be done in production programs), since
+       printf() is not async\-signal\-safe; see signal-safety(7).
+       Nevertheless, we use printf() here as a simple way of
+       showing that the handler was called. */
+
+    printf("Got SIGSEGV at address: 0x%lx\en",
+            (long) si\->si_addr);
+    exit(EXIT_FAILURE);
+}
+
+int
+main(int argc, char *argv[])
+{
+    char *p;
+    int pagesize;
+    struct sigaction sa;
+
+    sa.sa_flags = SA_SIGINFO;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_sigaction = handler;
+    if (sigaction(SIGSEGV, &sa, NULL) == \-1)
+        handle_error("sigaction");
+
+    pagesize = sysconf(_SC_PAGE_SIZE);
+    if (pagesize == \-1)
+        handle_error("sysconf");
+
+    /* Allocate a buffer aligned on a page boundary;
+       initial protection is PROT_READ | PROT_WRITE */
+
+    buffer = memalign(pagesize, 4 * pagesize);
+    if (buffer == NULL)
+        handle_error("memalign");
+
+    printf("Start of region:        0x%lx\en", (long) buffer);
+
+    if (mprotect(buffer + pagesize * 2, pagesize,
+                PROT_READ) == \-1)
+        handle_error("mprotect");
+
+    for (p = buffer ; ; )
+        *(p++) = \(aqa\(aq;
+
+    printf("Loop completed\en");     /* Should never happen */
+    exit(EXIT_SUCCESS);
+}
+.EE
+.SH SEE ALSO
+.BR mmap (2),
+.BR sysconf (3),
+.BR pkeys (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

@@ -1,0 +1,109 @@
+.\" Copyright (C) 2001 Andries Brouwer <aeb@cwi.nl>.
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.TH TRUNC 3  2019-03-06 "" "Linux Programmer's Manual"
+.SH NAME
+trunc, truncf, truncl \- round to integer, toward zero
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.PP
+.BI "double trunc(double " x );
+.BI "float truncf(float " x );
+.BI "long double truncl(long double " x );
+.fi
+.PP
+Link with \fI\-lm\fP.
+.PP
+.in -4n
+Feature Test Macro Requirements for glibc (see
+.BR feature_test_macros (7)):
+.in
+.PP
+.ad l
+.BR trunc (),
+.BR truncf (),
+.BR truncl ():
+.RS 4
+_ISOC99_SOURCE || _POSIX_C_SOURCE\ >=\ 200112L
+.RE
+.ad
+.SH DESCRIPTION
+These functions round
+.I x
+to the nearest integer value that is not larger in magnitude than
+.IR x .
+.SH RETURN VALUE
+These functions return the rounded integer value, in floating format.
+.PP
+If
+.I x
+is integral, infinite, or NaN,
+.I x
+itself is returned.
+.SH ERRORS
+No errors occur.
+.SH VERSIONS
+These functions first appeared in glibc in version 2.1.
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbw27 lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR trunc (),
+.BR truncf (),
+.BR truncl ()
+T}	Thread safety	MT-Safe
+.TE
+.SH CONFORMING TO
+C99, POSIX.1-2001, POSIX.1-2008.
+.SH NOTES
+The integral value returned by these functions may be too large
+to store in an integer type
+.RI ( int ,
+.IR long ,
+etc.).
+To avoid an overflow, which will produce undefined results,
+an application should perform a range check on the returned value
+before assigning it to an integer type.
+.SH SEE ALSO
+.BR ceil (3),
+.BR floor (3),
+.BR lrint (3),
+.BR nearbyint (3),
+.BR rint (3),
+.BR round (3)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

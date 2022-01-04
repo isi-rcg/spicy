@@ -1,0 +1,175 @@
+.\" Copyright 1995 Jim Van Zandt <jrv@vanzandt.mv.com>
+.\" and Copyright 2008, Linux Foundation, written by Michael Kerrisk
+.\"     <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.\" Modified 2002-07-27 by Walter Harms
+.\" 	(walter.harms@informatik.uni-oldenburg.de)
+.TH LOG1P 3   2017-09-15 "" "Linux Programmer's Manual"
+.SH NAME
+log1p, log1pf, log1pl \-  logarithm of 1 plus argument
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.PP
+.BI "double log1p(double " x );
+.BI "float log1pf(float " x );
+.BI "long double log1pl(long double " x );
+.PP
+.fi
+Link with \fI\-lm\fP.
+.PP
+.in -4n
+Feature Test Macro Requirements for glibc (see
+.BR feature_test_macros (7)):
+.in
+.PP
+.ad l
+.BR log1p ():
+.RS 4
+_ISOC99_SOURCE || _POSIX_C_SOURCE\ >=\ 200112L
+    || _XOPEN_SOURCE\ >=\ 500
+.\"    || _XOPEN_SOURCE\ &&\ _XOPEN_SOURCE_EXTENDED
+    || /* Since glibc 2.19: */ _DEFAULT_SOURCE
+    || /* Glibc versions <= 2.19: */ _BSD_SOURCE || _SVID_SOURCE
+.RE
+.br
+.BR log1pf (),
+.BR log1pl ():
+.RS 4
+_ISOC99_SOURCE || _POSIX_C_SOURCE\ >=\ 200112L
+    || /* Since glibc 2.19: */ _DEFAULT_SOURCE
+    || /* Glibc versions <= 2.19: */ _BSD_SOURCE || _SVID_SOURCE
+.RE
+.ad b
+.SH DESCRIPTION
+These functions return a value equivalent to
+.PP
+.nf
+    log (1 + \fIx\fP)
+.fi
+.PP
+The result is computed in a way
+that is accurate even if the value of
+.I x
+is near zero.
+.SH RETURN VALUE
+On success, these functions return the natural logarithm of
+.IR "(1\ +\ x)" .
+.PP
+If
+.I x
+is a NaN,
+a NaN is returned.
+.PP
+If
+.I x
+is positive infinity, positive infinity is returned.
+.PP
+If
+.I x
+is \-1, a pole error occurs,
+and the functions return
+.RB - HUGE_VAL ,
+.RB - HUGE_VALF ,
+or
+.RB - HUGE_VALL ,
+respectively.
+.PP
+If
+.I x
+is less than \-1 (including negative infinity),
+a domain error occurs,
+and a NaN (not a number) is returned.
+.\" POSIX.1 specifies a possible range error if x is subnormal
+.\" glibc 2.8 doesn't do this
+.SH ERRORS
+See
+.BR math_error (7)
+for information on how to determine whether an error has occurred
+when calling these functions.
+.PP
+The following errors can occur:
+.TP
+Domain error: \fIx\fP is less than \-1
+.I errno
+is set to
+.BR EDOM
+(but see BUGS).
+An invalid floating-point exception
+.RB ( FE_INVALID )
+is raised.
+.TP
+Pole error: \fIx\fP is \-1
+.I errno
+is set to
+.BR ERANGE
+(but see BUGS).
+A divide-by-zero floating-point exception
+.RB ( FE_DIVBYZERO )
+is raised.
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbw27 lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR log1p (),
+.BR log1pf (),
+.BR log1pl ()
+T}	Thread safety	MT-Safe
+.TE
+.SH CONFORMING TO
+C99, POSIX.1-2001, POSIX.1-2008.
+.\" BSD
+.SH BUGS
+Before version 2.22, the glibc implementation did not set
+.\" https://www.sourceware.org/bugzilla/show_bug.cgi?id=6792
+.I errno
+to
+.B EDOM
+when a domain error occurred.
+.PP
+Before version 2.22, the glibc implementation did not set
+.\" https://www.sourceware.org/bugzilla/show_bug.cgi?id=6792
+.I errno
+to
+.B ERANGE
+when a range error occurred.
+.SH SEE ALSO
+.BR exp (3),
+.BR expm1 (3),
+.BR log (3)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

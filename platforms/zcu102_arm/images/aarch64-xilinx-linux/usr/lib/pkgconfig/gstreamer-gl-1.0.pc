@@ -1,0 +1,16 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include/gstreamer-1.0
+pluginsdir=/usr/lib/gstreamer-1.0
+gl_platforms=egl 
+gl_winsys=wayland x11 
+gl_apis=gles2 
+
+Name: GStreamer OpenGL Plugins Libraries
+Description: Streaming media framework, OpenGL plugins libraries
+Version: 1.16.1
+Requires: gstreamer-video-1.0 gstreamer-base-1.0 gstreamer-1.0
+
+Libs: -L${libdir} -lgstgl-1.0
+Cflags: -I${includedir} -I${libdir}/gstreamer-1.0/include

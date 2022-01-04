@@ -1,0 +1,274 @@
+.\" Copyright (c) 2016 by Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.\"
+.TH CGROUP_NAMESPACES 7 2019-03-06 "Linux" "Linux Programmer's Manual"
+.SH NAME
+cgroup_namespaces \- overview of Linux cgroup namespaces
+.SH DESCRIPTION
+For an overview of namespaces, see
+.BR namespaces (7).
+.PP
+Cgroup namespaces virtualize the view of a process's cgroups (see
+.BR cgroups (7))
+as seen via
+.IR /proc/[pid]/cgroup
+and
+.IR /proc/[pid]/mountinfo .
+.PP
+Each cgroup namespace has its own set of cgroup root directories.
+These root directories are the base points for the relative
+locations displayed in the corresponding records in the
+.IR /proc/[pid]/cgroup
+file.
+When a process creates a new cgroup namespace using
+.BR clone (2)
+or
+.BR unshare (2)
+with the
+.BR CLONE_NEWCGROUP
+flag, it enters a new cgroup namespace in which its current
+cgroups directories become the cgroup root directories
+of the new namespace.
+(This applies both for the cgroups version 1 hierarchies
+and the cgroups version 2 unified hierarchy.)
+.PP
+When viewing
+.IR /proc/[pid]/cgroup ,
+the pathname shown in the third field of each record will be
+relative to the reading process's root directory
+for the corresponding cgroup hierarchy.
+If the cgroup directory of the target process lies outside
+the root directory of the reading process's cgroup namespace,
+then the pathname will show
+.I ../
+entries for each ancestor level in the cgroup hierarchy.
+.PP
+The following shell session demonstrates the effect of creating
+a new cgroup namespace.
+.PP
+First, (as superuser) we create a child cgroup in the
+.I freezer
+hierarchy, and place a process in that cgroup that we will
+use as part of the demonstration below:
+.PP
+.in +4n
+.EX
+# \fBmkdir \-p /sys/fs/cgroup/freezer/sub2\fP
+# \fBsleep 10000 &\fP     # Create a process that lives for a while
+[1] 20124
+# \fBecho 20124 > /sys/fs/cgroup/freezer/sub2/cgroup.procs\fP
+.EE
+.in
+.PP
+We then create another child cgroup in the
+.I freezer
+hierarchy and put the shell into that cgroup:
+.PP
+.in +4n
+.EX
+# \fBmkdir \-p /sys/fs/cgroup/freezer/sub\fP
+# \fBecho $$\fP                      # Show PID of this shell
+30655
+# \fBecho 30655 > /sys/fs/cgroup/freezer/sub/cgroup.procs\fP
+# \fBcat /proc/self/cgroup | grep freezer\fP
+7:freezer:/sub
+.EE
+.in
+.PP
+Next, we use
+.BR unshare (1)
+to create a process running a new shell in new cgroup and mount namespaces:
+.PP
+.EX
+.in +4n
+# \fBunshare \-Cm bash\fP
+.in
+.EE
+.PP
+We then inspect the
+.IR /proc/[pid]/cgroup
+files of, respectively, the new shell process started by the
+.BR unshare (1)
+command, a process that is in the original cgroup namespace
+.RI ( init ,
+with PID 1), and the process in the sibling cgroup
+.RI ( sub2 ):
+.PP
+.EX
+.in +4n
+$ \fBcat /proc/self/cgroup | grep freezer\fP
+7:freezer:/
+$ \fBcat /proc/1/cgroup | grep freezer\fP
+7:freezer:/..
+$ \fBcat /proc/20124/cgroup | grep freezer\fP
+7:freezer:/../sub2
+.in
+.EE
+.PP
+From the output of the first command,
+we see that the freezer cgroup membership of the new shell
+(which is in the same cgroup as the initial shell)
+is shown defined relative to the freezer cgroup root directory
+that was established when the new cgroup namespace was created.
+(In absolute terms,
+the new shell is in the
+.I /sub
+freezer cgroup,
+and the root directory of the freezer cgroup hierarchy
+in the new cgroup namespace is also
+.IR /sub .
+Thus, the new shell's cgroup membership is displayed as \(aq/\(aq.)
+.PP
+However, when we look in
+.IR /proc/self/mountinfo
+we see the following anomaly:
+.PP
+.EX
+.in +4n
+# \fBcat /proc/self/mountinfo | grep freezer\fP
+155 145 0:32 /.. /sys/fs/cgroup/freezer ...
+.in
+.EE
+.PP
+The fourth field of this line
+.RI ( /.. )
+should show the
+directory in the cgroup filesystem which forms the root of this mount.
+Since by the definition of cgroup namespaces, the process's current
+freezer cgroup directory became its root freezer cgroup directory,
+we should see \(aq/\(aq in this field.
+The problem here is that we are seeing a mount entry for the cgroup
+filesystem corresponding to our initial shell process's cgroup namespace
+(whose cgroup filesystem is indeed rooted in the parent directory of
+.IR sub ).
+We need to remount the freezer cgroup filesystem
+inside this cgroup namespace, after which we see the expected results:
+.PP
+.EX
+.in +4n
+# \fBmount \-\-make\-rslave /\fP     # Don't propagate mount events
+                            # to other namespaces
+# \fBumount /sys/fs/cgroup/freezer\fP
+# \fBmount \-t cgroup \-o freezer freezer /sys/fs/cgroup/freezer\fP
+# \fBcat /proc/self/mountinfo | grep freezer\fP
+155 145 0:32 / /sys/fs/cgroup/freezer rw,relatime ...
+.in
+.EE
+.\"
+.SH CONFORMING TO
+Namespaces are a Linux-specific feature.
+.SH NOTES
+Use of cgroup namespaces requires a kernel that is configured with the
+.B CONFIG_CGROUPS
+option.
+.PP
+The virtualization provided by cgroup namespaces serves a number of purposes:
+.IP * 2
+It prevents information leaks whereby cgroup directory paths outside of
+a container would otherwise be visible to processes in the container.
+Such leakages could, for example,
+reveal information about the container framework
+to containerized applications.
+.IP *
+It eases tasks such as container migration.
+The virtualization provided by cgroup namespaces
+allows containers to be isolated from knowledge of
+the pathnames of ancestor cgroups.
+Without such isolation, the full cgroup pathnames (displayed in
+.IR /proc/self/cgroups )
+would need to be replicated on the target system when migrating a container;
+those pathnames would also need to be unique,
+so that they don't conflict with other pathnames on the target system.
+.IP *
+It allows better confinement of containerized processes,
+because it is possible to mount the container's cgroup filesystems such that
+the container processes can't gain access to ancestor cgroup directories.
+Consider, for example, the following scenario:
+.RS 4
+.IP \(bu 2
+We have a cgroup directory,
+.IR /cg/1 ,
+that is owned by user ID 9000.
+.IP \(bu
+We have a process,
+.IR X ,
+also owned by user ID 9000,
+that is namespaced under the cgroup
+.IR /cg/1/2
+(i.e.,
+.I X
+was placed in a new cgroup namespace via
+.BR clone (2)
+or
+.BR unshare (2)
+with the
+.BR CLONE_NEWCGROUP
+flag).
+.RE
+.IP
+In the absence of cgroup namespacing, because the cgroup directory
+.IR /cg/1
+is owned (and writable) by UID 9000 and process
+.I X
+is also owned by user ID 9000, then process
+.I X
+would be able to modify the contents of cgroups files
+(i.e., change cgroup settings) not only in
+.IR /cg/1/2
+but also in the ancestor cgroup directory
+.IR /cg/1 .
+Namespacing process
+.IR X
+under the cgroup directory
+.IR /cg/1/2 ,
+in combination with suitable mount operations
+for the cgroup filesystem (as shown above),
+prevents it modifying files in
+.IR /cg/1 ,
+since it cannot even see the contents of that directory
+(or of further removed cgroup ancestor directories).
+Combined with correct enforcement of hierarchical limits,
+this prevents process
+.I X
+from escaping the limits imposed by ancestor cgroups.
+.SH SEE ALSO
+.BR unshare (1),
+.BR clone (2),
+.BR setns (2),
+.BR unshare (2),
+.BR proc (5),
+.BR cgroups (7),
+.BR credentials (7),
+.BR namespaces (7),
+.BR user_namespaces (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: libfm-gtk3
+Description: A glib/gio-based lib used to develop file managers providing some file management utilities and related-widgets missing in gtk+/glib.
+Requires: gtk+-3.0 gthread-2.0 gio-unix-2.0 libfm >= 1.3.1
+Version: 1.3.1
+Libs: -L${libdir} -lfm-gtk3
+Cflags: 

@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+libdir=/usr/lib
+
+Name: libv4lconvert
+Description: v4l format conversion library
+Version: 1.16.5
+Libs: -L${libdir} -lv4lconvert
+Libs.private: -lrt -lm -ljpeg
+Cflags: -I${includedir}

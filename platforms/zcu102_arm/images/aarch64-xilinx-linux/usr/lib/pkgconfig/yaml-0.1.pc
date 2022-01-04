@@ -1,0 +1,10 @@
+prefix=/usr
+exec_prefix=/usr
+includedir=/usr/include
+libdir=/usr/lib
+
+Name: LibYAML
+Description: Library to parse and emit YAML
+Version: 0.2.2
+Cflags: -I${includedir}
+Libs: -L${libdir} -lyaml

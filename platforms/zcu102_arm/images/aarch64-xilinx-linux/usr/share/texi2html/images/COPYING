@@ -1,0 +1,90 @@
+This is the COPYING file taken from the Singular project. It covers the image
+files in that directory (see the file GPL for the full text of the licence). 
+
+The files are also covered under the same copyright by the Creative Commons
+Attribution ShareAlike (see the file COPYING.Attribution-ShareAlike for the
+full test of the licence).
+
+
+                        SINGULAR version 3-0-0
+
+                     University of Kaiserslautern
+
+      Department of Mathematics and  Centre for Computer Algebra
+
+           Authors: G.-M. Greuel, G. Pfister, H. Schoenemann
+
+                        Copyright (C) 1986-2001
+
+
+
+                               *NOTICE*
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation ( version 2 of the License );
+with the following additional restrictions
+(which override any conflicting restrictions in the GPL):
+
+The following software used with SINGULAR have their own copyright: the
+omalloc library, the readline library, the Gnu Multiple Precision
+Library (GMP), the Multi Protocol library (MP), the Singular-Factory
+library, the Singular-libfac library, and, for the Windows 9X/NT
+distributions the Cygwin DLL and the Cygwin tools (Cygwin), and the
+XEmacs editor (XEmacs).
+
+Their copyrights and licences can be found in the accompanying files
+which are distributed along with these packages.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+59 Temple Place, Suite 330, Boston, MA  02111-1307  USA (see GPL)
+
+Please send any comments or bug reports to
+<singular@mathematik.uni-kl.de>.
+
+Please register yourself as a SINGULAR user by sending email to
+<singular@mathematik.uni-kl.de> with the subject line `register'.
+
+If you use Singular or parts thereof in a project and/or publish
+results that were partly obtained using SINGULAR, we ask you to cite
+SINGULAR and inform us thereof - see
+`http://www.singular.uni-kl.de/how_to_cite.html', for information on
+how to cite Singular.
+
+Availability
+============
+
+The latest information about SINGULAR is always available from
+`http://www.singular.uni-kl.de'.
+
+Acknowledgements
+================
+
+The development of SINGULAR is directed and coordinated by Gert-Martin
+Greuel, Gerhard Pfister, and Hans Scho"nemann.
+
+Currently, the SINGULAR team has the following members: Olaf Bachmann,
+Anne Fru"bis-Kru"ger, Thomas Keilen, Kai Kru"ger, Christoph Lossen,
+Victor Levandovskyy, Wilfred Pohl, Mathias Schulze, Eric Westenberger,
+and Tim Wichmann.
+
+Past members of the SINGULAR team are: Hubert Grassmann, Wolfgang
+Neumann, Jens Schmidt, Ru"diger Stobbe.
+
+Further contributions to SINGULAR were made by: Thomas Bayer, Isabelle
+Bermejo, Stephan Endrass, Jose Ignacio Farran Martin, Wolfram Decker,
+Philippe Gimenez, Christian Gorzel, Agnes Heydtmann, Dietmar Hillebrand,
+Tobias Hirsch, Martin Lamm, Bernd Martin, Michael Messollen, Thomas
+Nu"ssler, Moritz Wenk.
+
+We should like to acknowledge the financial support given by the
+Volkswagen-Stiftung, the Deutsche Forschungsgemeinschaft and the
+Stiftung fu"r Innovation des Landes Rheinland-Pfalz to the SINGULAR
+project.
+

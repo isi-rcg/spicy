@@ -1,0 +1,146 @@
+.\" Copyright 2001 John Levon <moz@compsoc.man.ac.uk>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.\" Additions, aeb, 2001-10-17.
+.TH CLEARENV 3  2017-09-15 "Linux" "Linux Programmer's Manual"
+.SH NAME
+clearenv \- clear the environment
+.SH SYNOPSIS
+.nf
+.B #include <stdlib.h>
+.PP
+.B "int clearenv(void);"
+.fi
+.PP
+.in -4n
+Feature Test Macro Requirements for glibc (see
+.BR feature_test_macros (7)):
+.in
+.PP
+.BR clearenv ():
+    /* Glibc since 2.19: */ _DEFAULT_SOURCE
+        || /* Glibc versions <= 2.19: */ _SVID_SOURCE || _BSD_SOURCE
+.SH DESCRIPTION
+The
+.BR clearenv ()
+function clears the environment of all name-value
+pairs and sets the value of the external variable
+.I environ
+to NULL.
+After this call, new variables can be added to the environment using
+.BR putenv (3)
+and
+.BR setenv (3).
+.SH RETURN VALUE
+The
+.BR clearenv ()
+function returns zero on success, and a nonzero
+value on failure.
+.\" Most versions of UNIX return -1 on error, or do not even have errors.
+.\" Glibc info and the Watcom C library document "a nonzero value".
+.SH VERSIONS
+Available since glibc 2.0.
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lb lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR clearenv ()
+T}	Thread safety	MT-Unsafe const:env
+.TE
+.sp 1
+.SH CONFORMING TO
+Various UNIX variants (DG/UX, HP-UX, QNX, ...).
+POSIX.9 (bindings for FORTRAN77).
+POSIX.1-1996 did not accept
+.BR clearenv ()
+and
+.BR putenv (3),
+but changed its mind and scheduled these functions for some
+later issue of this standard (see \[sc]B.4.6.1).
+However, POSIX.1-2001
+adds only
+.BR putenv (3),
+and rejected
+.BR clearenv ().
+.SH NOTES
+On systems where
+.BR clearenv ()
+is unavailable, the assignment
+.PP
+.in +4n
+.EX
+environ = NULL;
+.EE
+.in
+.PP
+will probably do.
+.PP
+The
+.BR clearenv ()
+function may be useful in security-conscious applications that want to
+precisely control the environment that is passed to programs
+executed using
+.BR exec (3).
+The application would do this by first clearing the environment
+and then adding select environment variables.
+.PP
+Note that the main effect of
+.BR clearenv ()
+is to adjust the value of the pointer
+.BR environ (7);
+this function does not erase the contents of the buffers
+containing the environment definitions.
+.PP
+The DG/UX and Tru64 man pages write: If
+.I environ
+has been modified by anything other than the
+.BR putenv (3),
+.BR getenv (3),
+or
+.BR clearenv ()
+functions, then
+.BR clearenv ()
+will return an error and the process environment will remain unchanged.
+.\" .LP
+.\" HP-UX has a ENOMEM error return.
+.SH SEE ALSO
+.BR getenv (3),
+.BR putenv (3),
+.BR setenv (3),
+.BR unsetenv (3),
+.BR environ (7)
+.SH COLOPHON
+This page is part of release 5.01 of the Linux
+.I man-pages
+project.
+A description of the project,
+information about reporting bugs,
+and the latest version of this page,
+can be found at
+\%https://www.kernel.org/doc/man\-pages/.

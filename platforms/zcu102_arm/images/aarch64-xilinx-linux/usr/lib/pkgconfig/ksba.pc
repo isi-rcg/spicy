@@ -1,0 +1,17 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+# API info
+api_version=1
+host=aarch64-xilinx-linux-gnu
+
+Name: ksba
+Description: Libksba provides an easy API to create and parse X.509 and CMS related objects
+Requires:
+Version: 1.3.5-unknown
+Libs: -L${libdir} -lksba
+Libs.private: -L${libdir} -lgpg-error
+Cflags: -I${includedir}
+

@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: libsvn_fs
+Description: Subversion Repository Filesystem Library
+Version: 1.12.2
+Requires:  apr-util-1 apr-1
+Requires.private:  libsvn_fs_util libsvn_delta libsvn_subr
+Libs: -L${libdir}  -lsvn_fs
+Cflags: -I${includedir}

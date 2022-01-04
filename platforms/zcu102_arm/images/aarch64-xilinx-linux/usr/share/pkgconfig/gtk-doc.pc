@@ -1,0 +1,7 @@
+prefix=/usr
+exec_prefix=/usr
+data_dir=/usr/share/gtk-doc/data
+
+Name: gtk-doc
+Description: API documentation generator
+Version: 1.31
