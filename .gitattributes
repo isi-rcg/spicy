@@ -1,3 +1,16 @@
 cpack filter=lfs diff=lfs merge=lfs -text
 rootfs.ext4 filter=lfs diff=lfs merge=lfs -text
 platforms/zcu102_arm/images/rootfs.ext4 filter=lfs diff=lfs merge=lfs -text
+platforms/zcu102_arm/images/aarch64-xilinx-linux/usr/libexec/gcc/aarch64-xilinx-linux/9.2.0/.debug/cc1 filter=lfs diff=lfs merge=lfs -text
+platforms/zcu102_arm/images/aarch64-xilinx-linux/usr/libexec/gcc/aarch64-xilinx-linux/9.2.0/.debug/cc1plus filter=lfs diff=lfs merge=lfs -text
+platforms/zcu102_arm/images/aarch64-xilinx-linux/usr/libexec/gcc/aarch64-xilinx-linux/9.2.0/.debug/lto1 filter=lfs diff=lfs merge=lfs -text
+platforms/zcu102_arm/images/aarch64-xilinx-linux/usr/bin/.debug/gdb filter=lfs diff=lfs merge=lfs -text
+platforms/zcu102_arm/images/aarch64-xilinx-linux/usr/bin/.debug/ctest filter=lfs diff=lfs merge=lfs -text
+platforms/zcu102_arm/images/aarch64-xilinx-linux/usr/bin/.debug/aarch64-xilinx-linux-ld.gold filter=lfs diff=lfs merge=lfs -text
+platforms/zcu102_arm/images/aarch64-xilinx-linux/usr/bin/.debug/xbutil2 filter=lfs diff=lfs merge=lfs -text
+platforms/zcu102_arm/images/aarch64-xilinx-linux/usr/bin/.debug/cpack filter=lfs diff=lfs merge=lfs -text
+platforms/zcu102_arm/images/aarch64-xilinx-linux/usr/bin/.debug/aarch64-xilinx-linux-dwp filter=lfs diff=lfs merge=lfs -text
+platforms/zcu102_arm/images/aarch64-xilinx-linux/usr/bin/.debug/cmake filter=lfs diff=lfs merge=lfs -text
+platforms/zcu102_arm/images/aarch64-xilinx-linux/usr/lib/.debug/libprotoc.so.20.0.2 filter=lfs diff=lfs merge=lfs -text
+platforms/zcu102_arm/images/aarch64-xilinx-linux/usr/lib/.debug/libxir.so.1.2.0 filter=lfs diff=lfs merge=lfs -text
+platforms/zcu102_arm/images/aarch64-xilinx-linux/usr/lib/.debug/libopencv_dnn.so.3.4.3 filter=lfs diff=lfs merge=lfs -text
