@@ -1,0 +1,8 @@
+#
+# This is a sample groupadmins file (/etc/quotagrpadmins)
+#
+#  Comments begin with hash in the beginning of the line
+
+# In this file you specify users responsible for space used by the group
+users: root
+mygroup: chief

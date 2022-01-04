@@ -1,0 +1,9 @@
+#
+#  This is sample quotatab (/etc/quotatab)
+#  Here you can specify description of each device for user
+#
+#  Comments begin with hash in the beginning of the line
+
+# Example of description
+# /dev/loop0: This is loopback device
+# /dev/hda4: Your home directory
